@@ -17,7 +17,6 @@ const handleAuthorize = (req, res) => {
   res.send("Autorización completa");
 };
 
-// Soportar tanto /authorize como /oauth/authorize
 app.get("/authorize", handleAuthorize);
 app.get("/oauth/authorize", handleAuthorize);
 
@@ -29,7 +28,6 @@ const handleToken = (req, res) => {
   });
 };
 
-// Soportar tanto /token como /oauth/token
 app.post("/token", handleToken);
 app.post("/oauth/token", handleToken);
 
@@ -43,6 +41,19 @@ app.get("/sse", (req, res) => {
 
 app.post("/messages", async (req, res) => {
   const message = req.body;
+  
+  // Aceptar notificaciones de inicialización sin errores
+  if (message.method === "notifications/initialized") {
+    return res.status(200).send();
+  }
+
+  if (message.method === "ping") {
+    return res.json({
+      jsonrpc: "2.0",
+      id: message.id,
+      result: {}
+    });
+  }
   
   if (message.method === "initialize") {
     return res.json({
@@ -92,7 +103,16 @@ app.post("/messages", async (req, res) => {
     }
   }
 
-  return res.status(404).json({ jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "Method not found" } });
+  // Si es otra notificación sin ID, responder OK
+  if (!message.id) {
+    return res.status(200).send();
+  }
+
+  return res.status(404).json({ 
+    jsonrpc: "2.0", 
+    id: message.id, 
+    error: { code: -32601, message: "Method not found" } 
+  });
 });
 
 const PORT = process.env.PORT || 3000;
