@@ -9,21 +9,29 @@ app.use(express.urlencoded({ extended: true }));
 
 const octokit = new Octokit({ auth: process.env.GITHUB_PERSONAL_ACCESS_TOKEN });
 
-app.get("/oauth/authorize", (req, res) => {
+const handleAuthorize = (req, res) => {
   const { redirect_uri, state } = req.query;
   if (redirect_uri) {
     return res.redirect(`${redirect_uri}?code=auth_code_ok&state=${state || ""}`);
   }
   res.send("Autorización completa");
-});
+};
 
-app.post("/oauth/token", (req, res) => {
+// Soportar tanto /authorize como /oauth/authorize
+app.get("/authorize", handleAuthorize);
+app.get("/oauth/authorize", handleAuthorize);
+
+const handleToken = (req, res) => {
   res.json({
     access_token: "token_mcp_ok",
     token_type: "Bearer",
     expires_in: 3600
   });
-});
+};
+
+// Soportar tanto /token como /oauth/token
+app.post("/token", handleToken);
+app.post("/oauth/token", handleToken);
 
 app.get("/sse", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
