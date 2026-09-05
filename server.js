@@ -31,9 +31,17 @@ const handleToken = (req, res) => {
 
 app.post(["/token", "/oauth/token"], handleToken);
 
-let transport;
+// Mapa para gestionar las sesiones activas de SSE
+const transports = {};
 
 app.get("/sse", async (req, res) => {
+  const transport = new SSEServerTransport("/messages", res);
+  transports[transport.sessionId] = transport;
+
+  res.on("close", () => {
+    delete transports[transport.sessionId];
+  });
+
   const server = new Server(
     { name: "github-mcp-server", version: "1.0.0" },
     { capabilities: { tools: {} } }
@@ -64,32 +72,17 @@ app.get("/sse", async (req, res) => {
     throw new Error("Herramienta no encontrada");
   });
 
-  transport = new SSEServerTransport("/messages", res);
   await server.connect(transport);
 });
 
 app.post("/messages", async (req, res) => {
+  const sessionId = req.query.sessionId;
+  const transport = transports[sessionId];
   if (transport) {
     await transport.handlePostMessage(req, res);
   } else {
-    res.status(400).send("No active transport session");
+    res.status(400).send("No active transport session for sessionId: " + sessionId);
   }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor MCP corriendo en el puerto ${PORT}`);
-});
-  // Si es otra notificación sin ID, responder OK
-  if (!message.id) {
-    return res.status(200).send();
-  }
-
-  return res.status(404).json({ 
-    jsonrpc: "2.0", 
-    id: message.id, 
-    error: { code: -32601, message: "Method not found" } 
-  });
 });
 
 const PORT = process.env.PORT || 3000;
