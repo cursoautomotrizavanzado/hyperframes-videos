@@ -5,15 +5,31 @@ import { Octokit } from "@octokit/rest";
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const octokit = new Octokit({ auth: process.env.GITHUB_PERSONAL_ACCESS_TOKEN });
+
+app.get("/oauth/authorize", (req, res) => {
+  const { redirect_uri, state } = req.query;
+  if (redirect_uri) {
+    return res.redirect(`${redirect_uri}?code=auth_code_ok&state=${state || ""}`);
+  }
+  res.send("Autorización completa");
+});
+
+app.post("/oauth/token", (req, res) => {
+  res.json({
+    access_token: "token_mcp_ok",
+    token_type: "Bearer",
+    expires_in: 3600
+  });
+});
 
 app.get("/sse", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
-
   res.write(`event: endpoint\ndata: /messages\n\n`);
 });
 
