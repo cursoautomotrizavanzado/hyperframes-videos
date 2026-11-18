@@ -35,7 +35,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
   var WIDE = JOB.formato === "16:9";
   var W = WIDE ? 1920 : 1080, H = WIDE ? 1080 : 1920;
   var cv = document.getElementById("c");
-  cv.width = W; cv.height = H;
+  var PS = window.__PREVIEW ? 0.5 : 1; // vista previa a media resolución: 4 veces menos trabajo en teléfonos
+  cv.width = W * PS; cv.height = H * PS;
   var ctx = cv.getContext("2d");
 
   /* ---------- Paleta y tipografías ---------- */
@@ -489,6 +490,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
 
   function render(t) {
     t = clamp(+t || 0, 0, D);
+    ctx.setTransform(PS, 0, 0, PS, 0, 0);
     background();
     var i = sceneAt(t), sc = SC[i], st = TL.scenes[i], local = t - st.start, dur = Math.max(.1, st.end - st.start);
     var fadeIn = i === 0 ? 1 : easeOut(local / .35), fadeOut = 1 - ease((local - (dur - .25)) / .25);
@@ -532,7 +534,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     function loop(ts) {
       requestAnimationFrame(loop);
       if (!playing && lastDraw) return;
-      if (ts - lastDraw < 40) return; // ~25 fps en la vista previa para no saturar el teléfono
+      if (ts - lastDraw < 50) return; // ~20 fps en la vista previa para no saturar el teléfono
       lastDraw = ts;
       var t = now(); if (t > D + 0.8) { offset = 0; base = performance.now(); t = 0; }
       render(Math.min(t, D));

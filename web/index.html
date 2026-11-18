@@ -12,7 +12,7 @@
   --mono:"JetBrains Mono",Consolas,"DejaVu Sans Mono",monospace;--sans:Inter,"Segoe UI",Roboto,Arial,sans-serif}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--t);font:15px/1.45 var(--sans)}
-body{background-image:linear-gradient(#0D1626 1px,transparent 1px),linear-gradient(90deg,#0D1626 1px,transparent 1px);background-size:20px 20px;min-height:100vh;padding-bottom:40px}
+body{padding-top:var(--safe-area-inset-top,0px);background-image:linear-gradient(#0D1626 1px,transparent 1px),linear-gradient(90deg,#0D1626 1px,transparent 1px);background-size:20px 20px;min-height:100vh;padding-bottom:40px}
 header{position:sticky;top:0;z-index:5;background:rgba(8,13,22,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--b);padding:10px 14px calc(10px) ;padding-top:max(10px,env(safe-area-inset-top))}
 .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .brand h1{font:800 17px var(--sans);margin:0;letter-spacing:.3px}
@@ -342,6 +342,7 @@ document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("act", v.id === "v-" + b.dataset.tab));
   try { $("pv").contentWindow.postMessage({ type: b.dataset.tab === "studio" ? "ad-play" : "ad-pause" }, "*"); } catch (e) {}
 });
+if ("IntersectionObserver" in window) new IntersectionObserver((es) => es.forEach((e) => { try { $("pv").contentWindow.postMessage({ type: e.isIntersecting && $("v-studio").classList.contains("act") ? "ad-play" : "ad-pause" }, "*"); } catch (x) {} })).observe($("pv"));
 document.addEventListener("visibilitychange", () => { try { $("pv").contentWindow.postMessage({ type: document.hidden ? "ad-pause" : "ad-play" }, "*"); } catch (e) {} });
 let FORMATO = "9:16";
 document.querySelectorAll("#fmtSeg button").forEach((b) => b.onclick = () => {

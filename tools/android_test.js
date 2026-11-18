@@ -81,10 +81,13 @@ function cap(name) { const f = path.join(OUT, `${String(++shot).padStart(2, "0")
     const dpr = await page.evaluate(() => devicePixelRatio);
     const X = Math.round(WV.x + p.x * dpr), Y = Math.round(WV.y + p.y * dpr), webTop = WV.y;
     rec("tap " + name, { X, Y, webTop });
+    await page.evaluate(() => { const t = document.getElementById("toast"); t.style.display = "none"; t.textContent = ""; });
+    const ts = Date.now();
     sh(`adb shell input tap ${X} ${Y}`);
-    await sleep(1500);
+    let toastTxt = "", ms = -1;
+    while (Date.now() - ts < 4000) { toastTxt = await page.evaluate(() => { const t = document.getElementById("toast"); return t.style.display !== "none" ? t.textContent : ""; }); if (toastTxt) { ms = Date.now() - ts; break; } await sleep(100); }
     cap(name);
-    rec("toast " + name, await page.evaluate(() => { const t = document.getElementById("toast"); return t && t.style.display !== "none" ? t.textContent : ""; }));
+    rec("toast " + name, { texto: toastTxt, ms });
     return p;
   }
   const tabState = () => page.evaluate(() => [...document.querySelectorAll(".view")].map((v) => v.id + ":" + v.classList.contains("act")).join(" "));
