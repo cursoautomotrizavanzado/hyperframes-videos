@@ -26,14 +26,24 @@ function cap(name) { const f = path.join(OUT, `${String(++shot).padStart(2, "0")
   if (!m) { cap("sin_devtools"); fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n")); process.exit(0); }
   sh(`adb forward tcp:9222 localabstract:${m[1]}`);
   await sleep(1500);
+  rec("json", sh("curl -s http://127.0.0.1:9222/json").slice(0, 600));
   const browser = await puppeteer.connect({ browserURL: "http://127.0.0.1:9222", defaultViewport: null });
-  const pages = await browser.pages();
-  const page = pages.find((p) => /localhost/.test(p.url())) || pages[0];
+  let page = null;
+  for (let i = 0; i < 20 && !page; i++) {
+    const t = browser.targets().find((t) => /localhost/.test(t.url()) && (t.type() === "page" || t.type() === "other" || t.type() === "webview"));
+    if (t) { try { page = await t.asPage(); } catch (e) { try { page = await t.page(); } catch (e2) { rec("asPage", e2.message); } } }
+    if (!page) { rec("targets", browser.targets().map((t) => t.type() + " " + t.url())); await sleep(1500); }
+  }
+  if (!page) throw new Error("No se pudo conectar a la página del WebView");
   rec("url", page.url());
   page.on("console", (msg) => rec("console." + msg.type(), msg.text()));
   page.on("pageerror", (e) => rec("PAGEERROR", e.message));
+  const t0 = Date.now();
   await page.reload({ waitUntil: "load" });
-  await sleep(3000);
+  rec("reload_ms", Date.now() - t0);
+  await page.waitForFunction("typeof window.toast === 'function' && document.readyState === 'complete'", { timeout: 60000 }).catch((e) => rec("espera_js", e.message));
+  rec("js_listo_ms", Date.now() - t0);
+  await sleep(2000);
   rec("env", await page.evaluate(() => ({ w: innerWidth, h: innerHeight, dpr: devicePixelRatio, cap: !!window.Capacitor, plugins: window.Capacitor ? Object.keys(Capacitor.Plugins || {}) : [], ua: navigator.userAgent })));
   cap("inicio");
   sh("adb shell uiautomator dump /sdcard/u.xml");
