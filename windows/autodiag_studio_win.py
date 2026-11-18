@@ -18,6 +18,7 @@ from datetime import datetime
 
 import requests
 import customtkinter as ctk
+import tkinter as tk
 from tkinter import filedialog, messagebox
 
 APP_NAME = "AutoDiag Video Studio"
@@ -516,6 +517,96 @@ class App(ctk.CTk):
     def thread(self, fn):
         threading.Thread(target=fn, daemon=True).start()
 
+    # ------------------------------------------------------------- copiar / pegar (clic derecho + Ctrl+V en cualquier teclado)
+    def _inner(self, w):
+        return getattr(w, "_entry", None) or getattr(w, "_textbox", None) or w
+
+    def paste_into(self, w):
+        inner = self._inner(w)
+        try:
+            txt = self.clipboard_get()
+        except Exception:
+            return "break"
+        if isinstance(w, ctk.CTkEntry):
+            txt = txt.strip()
+        try:
+            inner.delete("sel.first", "sel.last")
+        except Exception:
+            pass
+        inner.insert("insert", txt)
+        try:
+            inner.event_generate("<FocusOut>")
+        except Exception:
+            pass
+        return "break"
+
+    def copy_from(self, w, cut=False):
+        inner = self._inner(w)
+        try:
+            sel = inner.selection_get()
+        except Exception:
+            return "break"
+        self.clipboard_clear()
+        self.clipboard_append(sel)
+        if cut:
+            try:
+                inner.delete("sel.first", "sel.last")
+            except Exception:
+                pass
+        return "break"
+
+    def select_all(self, w):
+        inner = self._inner(w)
+        try:
+            if isinstance(w, ctk.CTkEntry):
+                inner.select_range(0, "end"); inner.icursor("end")
+            else:
+                inner.tag_add("sel", "1.0", "end")
+        except Exception:
+            pass
+        return "break"
+
+    def enable_clipboard(self, w):
+        inner = self._inner(w)
+        menu = tk.Menu(self, tearoff=0, bg=C["panel"], fg=C["text"], activebackground=C["orange"], activeforeground="#fff", font=("Segoe UI", 11))
+        menu.add_command(label="📋 Pegar", command=lambda: self.paste_into(w))
+        menu.add_command(label="Copiar", command=lambda: self.copy_from(w))
+        menu.add_command(label="Cortar", command=lambda: self.copy_from(w, True))
+        menu.add_separator()
+        menu.add_command(label="Seleccionar todo", command=lambda: self.select_all(w))
+
+        def popup(ev):
+            inner.focus_set()
+            menu.tk_popup(ev.x_root, ev.y_root)
+            menu.grab_release()
+            return "break"
+
+        def keys(ev):
+            if not (ev.state & 0x4):  # Ctrl presionado
+                return None
+            k = ev.keycode
+            if k == 86: return self.paste_into(w)          # V
+            if k == 67: return self.copy_from(w)           # C
+            if k == 88: return self.copy_from(w, True)     # X
+            if k == 65: return self.select_all(w)          # A
+            return None
+        inner.bind("<Button-3>", popup)
+        inner.bind("<Control-KeyPress>", keys)
+        inner.bind("<Shift-Insert>", lambda e: self.paste_into(w))
+
+    def secret_row(self, parent, entry_kwargs):
+        row = ctk.CTkFrame(parent, fg_color="transparent")
+        e = ctk.CTkEntry(row, show="•", font=self.F, **entry_kwargs)
+        e.pack(side="left", fill="x", expand=True)
+        self.btn(row, "📋 Pegar", lambda: self.paste_into(e), "cy", width=90).pack(side="left", padx=(6, 0))
+        eye = {"on": False}
+
+        def toggle():
+            eye["on"] = not eye["on"]
+            e.configure(show="" if eye["on"] else "•")
+        self.btn(row, "👁", toggle, width=44).pack(side="left", padx=(6, 0))
+        return row, e
+
     # ------------------------------------------------------------- cabecera
     def _header(self):
         h = ctk.CTkFrame(self, fg_color=C["bg"])
@@ -595,6 +686,9 @@ class App(ctk.CTk):
         self.scenes.pack(fill="x")
         brow = ctk.CTkFrame(left, fg_color="transparent")
         brow.pack(fill="x", pady=8)
+        for w in (self.idea, self.titulo, self.guion, self.scenes):
+            self.enable_clipboard(w)
+        self.btn(brow, "📋 Pegar texto narrado", lambda: (self.idea.delete("1.0", "end"), self.paste_into(self.idea), self.exact_var.set(True))).pack(side="left", padx=(0, 6))
         self.btn(brow, "📋 Copiar guion", self.copy_guion).pack(side="left", padx=(0, 6))
         self.btn(brow, "⬇️ Guardar HTML HyperFrames", self.save_html).pack(side="left", padx=6)
 
@@ -884,8 +978,8 @@ class App(ctk.CTk):
 
         f = card("① Cerebro IA · Google Gemini")
         self.label(f, "GEMINI_API_KEY").pack(fill="x", padx=14)
-        self.g_key = ctk.CTkEntry(f, show="•", font=self.F)
-        self.g_key.pack(fill="x", padx=14)
+        r0, self.g_key = self.secret_row(f, {"placeholder_text": "AIza..."})
+        r0.pack(fill="x", padx=14)
         r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14, pady=8)
         self.btn(r, "🔑 Obtener mi API Key Gratis", lambda: webbrowser.open("https://aistudio.google.com/app/apikey"), "cy").pack(side="left")
         self.btn(r, "⚡ Probar Conexión", self.test_gemini).pack(side="left", padx=8)
@@ -898,8 +992,8 @@ class App(ctk.CTk):
 
         f = card("② Motor de renderizado · GitHub Actions (gratis)")
         self.label(f, "GITHUB_PERSONAL_TOKEN").pack(fill="x", padx=14)
-        self.gh_token = ctk.CTkEntry(f, show="•", font=self.F)
-        self.gh_token.pack(fill="x", padx=14)
+        r0, self.gh_token = self.secret_row(f, {"placeholder_text": "ghp_... o github_pat_..."})
+        r0.pack(fill="x", padx=14)
         r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14, pady=8)
         self.btn(r, "🔑 Crear Token en 1 Clic", lambda: webbrowser.open("https://github.com/settings/tokens/new?scopes=repo,workflow&description=AutoDiag_Studio"), "cy").pack(side="left")
         ctk.CTkLabel(r, text="En GitHub baja al final y pulsa «Generate token».", font=self.F, text_color=C["dim"]).pack(side="left", padx=10)
@@ -936,6 +1030,8 @@ class App(ctk.CTk):
         self.cf_log.pack(fill="x", padx=14, pady=(0, 12))
         for e in (self.g_key, self.gh_token, self.gh_repo, self.cf_acc, self.cf_tok, self.px_url, self.px_key):
             e.bind("<FocusOut>", lambda _e: self.collect_fields())
+        for w in (self.g_key, self.gh_token, self.gh_repo, self.cf_acc, self.cf_tok, self.px_url, self.px_key, self.prof_name):
+            self.enable_clipboard(w)
 
     def collect_fields(self):
         p = self.P()

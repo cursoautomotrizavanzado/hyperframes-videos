@@ -179,7 +179,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
     <div class="card">
       <div class="step"><div class="n">1</div><div style="flex:1"><h2 style="margin:4px 0 0">Cerebro IA · Google Gemini</h2></div></div>
       <label>GEMINI_API_KEY</label>
-      <input type="password" id="gKey" placeholder="AIza..." autocomplete="off">
+      <div class="row" style="flex-wrap:nowrap"><input type="password" id="gKey" placeholder="AIza..." autocomplete="off" style="flex:1"><button class="b cy" style="flex:none" type="button" data-paste="gKey">📋 Pegar</button><button class="b" style="flex:none" type="button" data-eye="gKey">👁</button></div>
       <div class="row" style="margin-top:8px">
         <button class="b cy" id="btnGKeyGet">🔑 Obtener mi API Key Gratis</button>
         <button class="b" id="btnGTest">⚡ Probar Conexión</button>
@@ -192,7 +192,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
     <div class="card">
       <div class="step"><div class="n">2</div><div style="flex:1"><h2 style="margin:4px 0 0">Motor de renderizado · GitHub</h2></div></div>
       <label>GITHUB_PERSONAL_TOKEN</label>
-      <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off">
+      <div class="row" style="flex-wrap:nowrap"><input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off" style="flex:1"><button class="b cy" style="flex:none" type="button" data-paste="ghToken">📋 Pegar</button><button class="b" style="flex:none" type="button" data-eye="ghToken">👁</button></div>
       <div class="row" style="margin-top:8px">
         <button class="b cy" id="btnGhGet">🔑 Crear Token en 1 Clic</button>
         <button class="b" id="btnGhTest">⚡ Probar Token</button>
@@ -417,7 +417,7 @@ function buildHtml(job, timeline, preview) {
   const dur = timeline && timeline.duration ? Number(timeline.duration).toFixed(3) : "10";
   return ENGINE.split("__W__").join(W).split("__H__").join(H).split("__DURATION__").join(dur).split("__FPS__").join(job.fps || 60)
     .replace("/*__JOB__*/null", safeJson(job)).replace("/*__TIMELINE__*/null", timeline ? safeJson(timeline) : "null")
-    .replace("/*__PREVIEW__*/false", preview ? "true" : "false").replace(preview ? '<script src="gsap.min.js"></script>' : "\u0000", "").replace("/*__LIBRE__*/", String(job.codigo_libre || "").replace(/<\/script/gi, "<\\/script"));
+    .replace("/*__PREVIEW__*/false", preview ? "true" : "false").replace(preview ? '<scr' + 'ipt src="gsap.min.js"></scr' + 'ipt>' : "\u0000", "").replace("/*__LIBRE__*/", String(job.codigo_libre || "").replace(/<\/script/gi, "<\\/script"));
 }
 function estimateTimeline(job) { // marcas de tiempo estimadas (formato Whisper word-level)
   const segs = job.escenas.map((s) => s.texto || ""), toks = [];
@@ -590,6 +590,17 @@ $("btnRender").onclick = async () => {
   btn.disabled = false;
 };
 function renderHistory() { $("hist").innerHTML = (STORE.history || []).map((h) => `<div><span>🎞️ ${h.name}</span><span>${h.at}</span></div>`).join(""); }
+
+/* ======================= Pegar / mostrar llaves ======================= */
+document.querySelectorAll("[data-paste]").forEach((b) => b.onclick = async () => {
+  const el = $(b.dataset.paste);
+  try { let t = "";
+    const CB = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Clipboard;
+    if (CB) { const r = await CB.read(); t = (r && r.value) || ""; } else t = await navigator.clipboard.readText();
+    t = String(t).trim(); if (!t) throw 0; el.value = t; el.dispatchEvent(new Event("change")); toast("✅ Pegado"); }
+  catch (e) { el.type = "text"; el.focus(); el.select(); toast("Mantén el dedo sobre la casilla y elige «Pegar» (o Ctrl+V)", 5000); }
+});
+document.querySelectorAll("[data-eye]").forEach((b) => b.onclick = () => { const el = $(b.dataset.eye); el.type = el.type === "password" ? "text" : "password"; });
 
 /* ======================= Arranque ======================= */
 (async () => {
