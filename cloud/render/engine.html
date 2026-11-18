@@ -148,16 +148,23 @@ window.__PREVIEW = /*__PREVIEW__*/false;
   function sceneAt(t) { for (var i = SC.length - 1; i >= 0; i--) if (t >= TL.scenes[i].start) return i; return 0; }
 
   /* ---------- Fondo milimetrado ---------- */
+  var BG = null;
   function background() {
-    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
-    if (C.gridMode === "diag") { ctx.lineWidth = 6; ctx.strokeStyle = C.grid; ctx.beginPath(); for (var d = -H; d < W; d += 16) { ctx.moveTo(d, 0); ctx.lineTo(d + H, H); } ctx.stroke(); return; }
-    ctx.lineWidth = 1; ctx.strokeStyle = C.grid; ctx.beginPath();
-    for (var x = 0; x <= W; x += 20) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); }
-    for (var y = 0; y <= H; y += 20) { ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); }
-    ctx.stroke(); ctx.strokeStyle = C.grid2; ctx.beginPath();
-    for (x = 0; x <= W; x += 100) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); }
-    for (y = 0; y <= H; y += 100) { ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); }
-    ctx.stroke();
+    if (!BG) { // la cuadrícula se dibuja una sola vez y luego se copia (mucho más rápido en teléfonos)
+      BG = document.createElement("canvas"); BG.width = W; BG.height = H; var b = BG.getContext("2d");
+      b.fillStyle = C.bg; b.fillRect(0, 0, W, H);
+      if (C.gridMode === "diag") { b.lineWidth = 6; b.strokeStyle = C.grid; b.beginPath(); for (var d = -H; d < W; d += 16) { b.moveTo(d, 0); b.lineTo(d + H, H); } b.stroke(); }
+      else {
+        b.lineWidth = 1; b.strokeStyle = C.grid; b.beginPath();
+        for (var x = 0; x <= W; x += 20) { b.moveTo(x + .5, 0); b.lineTo(x + .5, H); }
+        for (var y = 0; y <= H; y += 20) { b.moveTo(0, y + .5); b.lineTo(W, y + .5); }
+        b.stroke(); b.strokeStyle = C.grid2; b.beginPath();
+        for (x = 0; x <= W; x += 100) { b.moveTo(x + .5, 0); b.lineTo(x + .5, H); }
+        for (y = 0; y <= H; y += 100) { b.moveTo(0, y + .5); b.lineTo(W, y + .5); }
+        b.stroke();
+      }
+    }
+    ctx.drawImage(BG, 0, 0);
   }
 
   /* ---------- Portada (primer cuadro claro con título) ---------- */
@@ -521,10 +528,19 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     addEventListener("resize", fit); fit();
     var playing = true, base = performance.now(), offset = 0;
     function now() { return playing ? offset + (performance.now() - base) / 1000 : offset; }
-    function loop() { var t = now(); if (t > D + 0.8) { offset = 0; base = performance.now(); t = 0; } render(Math.min(t, D)); try { parent.postMessage({ type: "ad-time", t: t, d: D }, "*"); } catch (e) {} requestAnimationFrame(loop); }
+    var lastDraw = 0, lastMsg = 0;
+    function loop(ts) {
+      requestAnimationFrame(loop);
+      if (!playing && lastDraw) return;
+      if (ts - lastDraw < 40) return; // ~25 fps en la vista previa para no saturar el teléfono
+      lastDraw = ts;
+      var t = now(); if (t > D + 0.8) { offset = 0; base = performance.now(); t = 0; }
+      render(Math.min(t, D));
+      if (ts - lastMsg > 250) { lastMsg = ts; try { parent.postMessage({ type: "ad-time", t: t, d: D }, "*"); } catch (e) {} }
+    }
     addEventListener("message", function (ev) {
       var m = ev.data || {};
-      if (m.type === "ad-seek") { offset = +m.t || 0; base = performance.now(); }
+      if (m.type === "ad-seek") { offset = +m.t || 0; base = performance.now(); lastDraw = 0; }
       if (m.type === "ad-play") { if (!playing) { playing = true; base = performance.now(); } }
       if (m.type === "ad-pause") { offset = now(); playing = false; }
     });

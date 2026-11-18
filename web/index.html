@@ -340,7 +340,9 @@ $("btnProfDel").onclick = async () => { if (Object.keys(STORE.profiles).length <
 document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("act", x === b));
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("act", v.id === "v-" + b.dataset.tab));
+  try { $("pv").contentWindow.postMessage({ type: b.dataset.tab === "studio" ? "ad-play" : "ad-pause" }, "*"); } catch (e) {}
 });
+document.addEventListener("visibilitychange", () => { try { $("pv").contentWindow.postMessage({ type: document.hidden ? "ad-pause" : "ad-play" }, "*"); } catch (e) {} });
 let FORMATO = "9:16";
 document.querySelectorAll("#fmtSeg button").forEach((b) => b.onclick = () => {
   FORMATO = b.dataset.v; document.querySelectorAll("#fmtSeg button").forEach((x) => x.classList.toggle("act", x === b));
@@ -455,7 +457,7 @@ function collectJob() {
 function updatePreview() {
   const job = collectJob(); if (!job) return;
   const html = buildHtml(job, job.marcas_tiempo_estimadas, true);
-  $("pv").srcdoc = html; $("pvInfo").textContent = "≈ " + job.marcas_tiempo_estimadas.duration.toFixed(0) + " s · " + job.escenas.length + " escenas";
+  $("pv").srcdoc = html; $("pv").onload = () => { if (!$("v-studio").classList.contains("act")) $("pv").contentWindow.postMessage({ type: "ad-pause" }, "*"); }; $("pvInfo").textContent = "≈ " + job.marcas_tiempo_estimadas.duration.toFixed(0) + " s · " + job.escenas.length + " escenas";
 }
 addEventListener("message", (e) => { if (e.data && e.data.type === "ad-time") $("pvTime").textContent = (+e.data.t).toFixed(1) + " / " + (+e.data.d).toFixed(1) + " s"; });
 function showData(d) {
