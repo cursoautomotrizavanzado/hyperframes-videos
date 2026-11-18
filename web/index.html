@@ -26,8 +26,8 @@ header{position:sticky;top:0;z-index:5;background:rgba(8,13,22,.94);backdrop-fil
 .tabs button.act{background:var(--p);color:var(--t);border-color:var(--o);box-shadow:inset 0 -3px 0 var(--o)}
 main{max-width:1180px;margin:0 auto;padding:14px}
 .view{display:none}.view.act{display:block}
-.grid{display:grid;gap:14px;grid-template-columns:1fr}
-@media(min-width:960px){.grid.two{grid-template-columns:1fr 420px}}
+.grid{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}.grid>*{min-width:0}
+@media(min-width:960px){.grid.two{grid-template-columns:minmax(0,1fr) 420px}}
 .card{background:var(--p);border:1px solid var(--b);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .card h2{font:800 14px var(--mono);letter-spacing:.8px;text-transform:uppercase;margin:0 0 12px;color:var(--d);display:flex;align-items:center;gap:8px}
 .card h2:after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--b),transparent)}
@@ -37,12 +37,14 @@ textarea{min-height:90px;resize:vertical}
 textarea.code{font:12px/1.4 var(--mono);min-height:180px}
 input:focus,select:focus,textarea:focus{border-color:var(--c)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.row>*{flex:1 1 auto}
+.row>*{flex:1 1 auto;min-width:0}
+.row>div{flex:1 1 130px}
+select{max-width:100%;text-overflow:ellipsis}
 button.b{background:var(--p2);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:11px 14px;font:700 14px var(--sans);cursor:pointer;white-space:nowrap}
 button.b:hover{border-color:var(--c)}
 button.b.pri{background:var(--o);border-color:var(--o);color:#fff}
 button.b.cy{background:transparent;border-color:var(--c);color:var(--c)}
-button.b.big{width:100%;padding:15px;font-size:16px}
+button.b.big{width:100%;padding:15px;font-size:16px;white-space:normal}
 button.b:disabled{opacity:.5;cursor:wait}
 .seg{display:flex;border:1px solid var(--b);border-radius:10px;overflow:hidden}
 .seg button{flex:1;background:var(--p2);color:var(--d);border:0;padding:10px;font:700 14px var(--mono)}
