@@ -119,9 +119,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     words.forEach(function (w) { var test = cur ? cur + " " + w : w; if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test; });
     if (cur) lines.push(cur); return lines;
   }
-  function fitFont(s, maxW, maxH, maxPx, minPx, weight, maxLines) {
-    for (var px = maxPx; px >= minPx; px -= 2) { font(px, weight); var ls = wrap(s, maxW); if (ls.length <= (maxLines || 3) && ls.length * px * 1.12 <= maxH) return { px: px, lines: ls }; }
-    font(minPx, weight); return { px: minPx, lines: wrap(s, maxW).slice(0, maxLines || 3) };
+  function fitFont(s, maxW, maxH, maxPx, minPx, weight, maxLines, fam) {
+    for (var px = maxPx; px >= minPx; px -= 2) { font(px, weight, fam); var ls = wrap(s, maxW); if (ls.length <= (maxLines || 3) && ls.length * px * 1.12 <= maxH) return { px: px, lines: ls }; }
+    font(minPx, weight, fam); return { px: minPx, lines: wrap(s, maxW).slice(0, maxLines || 3) };
   }
   function panel(r, title, accent) {
     ctx.save(); ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 24; rr(r.x, r.y, r.w, r.h, 18); ctx.fillStyle = C.panel; ctx.fill(); ctx.restore();
@@ -406,8 +406,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       font(WIDE ? 22 : 24, 700, MONO); text(String(b.etiqueta || b.label || "").toUpperCase(), x + 26, y + 40, C.dim);
       var val = String(b.valor || b.value || ""), m = val.match(/^(-?\d+(?:[.,]\d+)?)(.*)$/);
       if (m) { var target = parseFloat(m[1].replace(",", ".")), dec = (m[1].split(/[.,]/)[1] || "").length; val = (target * easeOut((local - 0.25 - i * 0.22) / 0.9)).toFixed(dec).replace(".", m[1].indexOf(",") >= 0 ? "," : ".") + m[2]; }
-      var f = fitFont(val, bw - 50, bh - 60, WIDE ? 64 : 70, 26, 800, 1); ctx.font = "800 " + f.px + "px " + MONO;
-      ctx.shadowColor = col; ctx.shadowBlur = 14; text(f.lines[0] || val, x + 26, y + bh - 26, col); ctx.restore();
+      var full = String(b.valor || b.value || ""), f = fitFont(full, bw - 50, bh - 60, WIDE ? 64 : 70, 22, 800, 1, MONO); ctx.font = "800 " + f.px + "px " + MONO;
+      ctx.shadowColor = col; ctx.shadowBlur = 14; text(val, x + 26, y + bh - 26, col); ctx.restore();
     });
   }
 

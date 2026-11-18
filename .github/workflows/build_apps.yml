@@ -44,21 +44,24 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: android-actions/setup-android@v3
-      - name: Capacitor
+      - name: Compilar APK (Capacitor + Gradle)
         working-directory: android
         run: |
-          npm install --no-audit --no-fund
-          rm -rf www && mkdir -p www && cp -r ../web/* www/
-          npx cap add android
-          npx @capacitor/assets generate --android --iconBackgroundColor "#080D16" --splashBackgroundColor "#080D16" || echo "iconos por defecto"
-          sed -i 's#<application#<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <application android:requestLegacyExternalStorage="true"#' android/app/src/main/AndroidManifest.xml
-          npx cap sync android
-      - name: Gradle assembleDebug
-        working-directory: android/android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon -q
-          cp app/build/outputs/apk/debug/app-debug.apk ../../AutoDiagStudio.apk
+          set -o pipefail
+          (
+            set -ex
+            npm install --no-audit --no-fund
+            rm -rf www && mkdir -p www && cp -r ../web/* www/
+            npx cap add android
+            npx @capacitor/assets generate --android --iconBackgroundColor "#080D16" --splashBackgroundColor "#080D16" || echo "iconos por defecto"
+            sed -i 's#<application#<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <application android:requestLegacyExternalStorage="true"#' android/app/src/main/AndroidManifest.xml
+            npx cap sync android
+            cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace
+            cp app/build/outputs/apk/debug/app-debug.apk ../../AutoDiagStudio.apk
+          ) 2>&1 | tee ../android_build_log.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: apklog, path: android_build_log.txt }
       - uses: actions/upload-artifact@v4
         with: { name: apk, path: AutoDiagStudio.apk }
 
