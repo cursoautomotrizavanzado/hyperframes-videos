@@ -6,6 +6,11 @@
 <title>AutoDiag Composition</title>
 <script src="gsap.min.js"></script>
 <style>
+  @font-face{font-family:"Poppins";font-weight:500;src:url("fonts/poppins-latin-500-normal.woff2") format("woff2")}
+  @font-face{font-family:"Poppins";font-weight:600;src:url("fonts/poppins-latin-600-normal.woff2") format("woff2")}
+  @font-face{font-family:"Poppins";font-weight:700;src:url("fonts/poppins-latin-700-normal.woff2") format("woff2")}
+  @font-face{font-family:"Poppins";font-weight:800;src:url("fonts/poppins-latin-800-normal.woff2") format("woff2")}
+  .fontwarm{position:absolute;left:-9999px;top:0;font-family:"Poppins"}
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:__W__px;height:__H__px;overflow:hidden;background:#080D16}
   #root{position:relative;width:__W__px;height:__H__px;overflow:hidden}
@@ -15,6 +20,7 @@
 </style>
 </head>
 <body>
+<div class="fontwarm"><b style="font-weight:500">Áa</b><b style="font-weight:600">Áa</b><b style="font-weight:700">Áa</b><b style="font-weight:800">Áa</b></div>
 <div id="root" data-composition-id="main" data-start="0" data-duration="__DURATION__" data-width="__W__" data-height="__H__" data-fps="__FPS__">
   <canvas id="c" class="clip" data-start="0" data-duration="__DURATION__" data-track-index="0" width="__W__" height="__H__"></canvas>
 </div>
@@ -488,8 +494,271 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     ctx.restore();
   }
 
+  /* =====================================================================
+     ESTILO "PASTILLAS AZUL" — fondo azul marino, etiqueta superior, título centrado,
+     ilustración de línea, pastillas de texto que aparecen con la voz y frase resumen.
+     Sin subtítulos palabra por palabra.
+     ===================================================================== */
+  var PAST = String(JOB.estilo || "").toLowerCase() === "pastillas";
+  var P = { bg1: "#0A1A36", bg2: "#06112A", mid: "#0C2248", amber: "#F4B638", green: "#3DDC97", cyan: "#3CCFF0", blue: "#8DB4FF",
+    red: "#FF4D5E", white: "#FFFFFF", dim: "#8EA3C8", fill: "rgba(7,17,40,.94)", line: "#8DB4FF" };
+  var PF = '"Poppins","Inter","Segoe UI","Noto Sans","DejaVu Sans",Arial,sans-serif';
+  var PCOL = { verde: P.green, green: P.green, blanco: P.white, white: P.white, cian: P.cyan, cyan: P.cyan, azul: P.blue, blue: P.blue,
+    rojo: P.red, red: P.red, ambar: P.amber, "ámbar": P.amber, amarillo: P.amber, naranja: P.amber, amber: P.amber };
+  function pcol(c, d) { return PCOL[String(c || "").toLowerCase()] || d || P.white; }
+  var PL = WIDE ? { chipY: 22, titleY: 112, ill: { x: 60, y: 160, w: 1180, h: 770 }, pillsX: 1560, pillsY: 330, pillsW: 620, resY: 962, barY: 1050, barX: 60, barW: 1800, titlePx: 52, pillPx: 30, resPx: 40 }
+                : { chipY: 104, titleY: 286, ill: { x: 60, y: 370, w: 960, h: 680 }, pillsX: 540, pillsY: 1150, pillsW: 920, resY: 1556, barY: 1846, barX: 60, barW: 960, titlePx: 58, pillPx: 29, resPx: 44 };
+  var PORTADA_P = 2.4, PORT_FADE = 0.6;
+
+  var BGP = null;
+  function pBackground() {
+    if (!BGP) {
+      BGP = document.createElement("canvas"); BGP.width = W; BGP.height = H; var b = BGP.getContext("2d");
+      var g = b.createLinearGradient(0, 0, 0, H); g.addColorStop(0, P.bg1); g.addColorStop(0.45, P.mid); g.addColorStop(1, P.bg2);
+      b.fillStyle = g; b.fillRect(0, 0, W, H);
+      var rg = b.createRadialGradient(W / 2, H * 0.42, 10, W / 2, H * 0.42, Math.max(W, H) * 0.6);
+      rg.addColorStop(0, "rgba(40,90,190,.22)"); rg.addColorStop(1, "rgba(0,0,0,0)"); b.fillStyle = rg; b.fillRect(0, 0, W, H);
+      b.strokeStyle = "rgba(130,170,255,.05)"; b.lineWidth = 2; b.beginPath();
+      for (var d = -H; d < W + H; d += 150) { b.moveTo(d, 0); b.lineTo(d + H * 0.35, H); b.moveTo(d, 0); b.lineTo(d - H * 0.35, H); }
+      b.stroke();
+    }
+    ctx.drawImage(BGP, 0, 0);
+  }
+  function pfont(px, w) { ctx.font = (w || 700) + " " + px + "px " + PF; }
+  function pfit(s, maxW, px, minPx, w) { pfont(px, w); while (ctx.measureText(s).width > maxW && px > minPx) { px -= 1; pfont(px, w); } return px; }
+  // Pastilla: texto con borde redondeado del mismo color
+  function pill(s, cx, y, color, px, alpha, opt) {
+    opt = opt || {}; if (alpha <= 0 || !s) return 0;
+    var txt = opt.upper === false ? String(s) : String(s).toUpperCase(), maxW = opt.maxW || (WIDE ? 760 : 940);
+    px = pfit(txt, maxW - px * 1.6, px, 14, opt.weight || 700);
+    var w = ctx.measureText(txt).width + px * 1.5, h = px * 1.85, x = opt.left ? cx : cx - w / 2, sc = opt.pop === undefined ? 1 : opt.pop;
+    ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x + w / 2, y + h / 2); ctx.scale(sc, sc); ctx.translate(-(x + w / 2), -(y + h / 2));
+    rr(x, y, w, h, h / 2); ctx.fillStyle = opt.fill || P.fill; ctx.fill(); ctx.lineWidth = opt.lw || 3; ctx.strokeStyle = color; ctx.stroke();
+    ctx.fillStyle = opt.textColor || color; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, x + w / 2, y + h / 2 + px * 0.04);
+    ctx.restore(); return h;
+  }
+  function popIn(local, at, dur) { var x = clamp((local - at) / (dur || 0.35), 0, 1); return { a: easeOut(x), s: 0.86 + 0.14 * easeOut(x) + 0.05 * Math.sin(x * Math.PI) }; }
+  function plabel(s, x, y, color, px, align, w, raw) { pfont(px, w || 700); ctx.fillStyle = color; ctx.textAlign = align || "center"; ctx.textBaseline = "middle"; ctx.fillText(raw ? String(s) : String(s).toUpperCase(), x, y); }
+  function pbox(x, y, w, h, color, alpha) { ctx.save(); ctx.globalAlpha *= alpha === undefined ? 1 : alpha; rr(x, y, w, h, 12); ctx.fillStyle = P.fill; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = color; ctx.stroke(); ctx.restore(); }
+  // Trazo que se dibuja progresivamente y puntos que fluyen sobre él
+  function polyLen(pts) { var L2 = 0; for (var i = 1; i < pts.length; i++) L2 += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L2; }
+  function pointAt(pts, d) { for (var i = 1; i < pts.length; i++) { var s = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (d <= s) { var k = s ? d / s : 0; return [lerp(pts[i - 1][0], pts[i][0], k), lerp(pts[i - 1][1], pts[i][1], k)]; } d -= s; } return pts[pts.length - 1]; }
+  function stroke(pts, color, width, prog) {
+    var tot = polyLen(pts), lim = tot * clamp(prog, 0, 1), acc = 0; if (lim <= 0) return;
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length; i++) { var s = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (acc + s >= lim) { var e = pointAt(pts, lim); ctx.lineTo(e[0], e[1]); break; } ctx.lineTo(pts[i][0], pts[i][1]); acc += s; }
+    ctx.stroke(); ctx.restore();
+  }
+  function flowDots(pts, color, t, speed, gap, r, prog) {
+    var tot = polyLen(pts), lim = tot * clamp(prog === undefined ? 1 : prog, 0, 1), off = (t * speed) % gap;
+    ctx.save(); ctx.fillStyle = color; for (var d = off; d < lim; d += gap) { var p = pointAt(pts, d); ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 7); ctx.fill(); } ctx.restore();
+  }
+  function stripes(pts, c1, c2, width, t, speed, prog) { stroke(pts, c1, width, prog); ctx.save(); ctx.setLineDash([width * 1.2, width * 1.2]); ctx.lineDashOffset = -t * speed; stroke(pts, c2, width, prog); ctx.restore(); }
+  // Inyector de línea (vertical); devuelve puntos de conexión
+  function injector(cx, top, h, color, alpha) {
+    var s = h / 260, bw = 44 * s, bh = 200 * s;
+    ctx.save(); ctx.globalAlpha *= alpha === undefined ? 1 : alpha; ctx.lineWidth = Math.max(3, 5 * s); ctx.strokeStyle = color; ctx.fillStyle = "rgba(60,207,240,.07)";
+    rr(cx - 15 * s, top, 30 * s, 26 * s, 5 * s); ctx.fill(); ctx.stroke();
+    rr(cx - bw / 2, top + 26 * s, bw, bh, 18 * s); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(cx - 13 * s, top + 26 * s + bh); ctx.lineTo(cx + 13 * s, top + 26 * s + bh); ctx.lineTo(cx, top + 26 * s + bh + 22 * s); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    return { top: [cx + 15 * s, top + 13 * s], left: [cx - bw / 2, top + 60 * s], mid: [cx - bw / 2, top + 120 * s], bottom: [cx, top + 26 * s + bh + 22 * s], s: s };
+  }
+
+  /* ---------- Piezas ---------- */
+  function gauge(cx, cy, r, valor, local, label, alerta) {
+    var a0 = Math.PI * 1.08, a1 = Math.PI * 1.92, v = clamp(num(valor, 0.4), 0, 1) * easeOut(local / 1.0);
+    var col = alerta ? P.red : v > 0.66 ? P.red : v > 0.4 ? P.amber : P.green;
+    ctx.save(); ctx.lineCap = "round"; ctx.lineWidth = r * 0.12; ctx.strokeStyle = "rgba(141,180,255,.25)"; ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.stroke();
+    ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(cx, cy, r, a0, a0 + (a1 - a0) * Math.max(0.02, v)); ctx.stroke();
+    var an = a0 + (a1 - a0) * v; ctx.strokeStyle = P.white; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(an) * r * 0.78, cy + Math.sin(an) * r * 0.78); ctx.stroke();
+    ctx.fillStyle = P.white; ctx.beginPath(); ctx.arc(cx, cy, r * 0.08, 0, 7); ctx.fill(); ctx.restore();
+    if (label) plabel(label, cx, cy + r * 0.32, P.white, Math.round(r * 0.13));
+    if (alerta) plabel(alerta, cx, cy + r * 0.55, P.red, Math.round(r * 0.15), "center", 800);
+  }
+  function pzInyectorRetorno(R, sc, local, t) {
+    var d = sc.datos || {}, exceso = /exceso|alto|fuga/i.test(d.flujo || "") || d.fuga === true, side = d.etiquetas_laterales || d.etiquetas || [];
+    var hasGauge = !!d.manometro, hasRiel = d.riel !== false && !side.length, hasDep = d.deposito !== false && !hasGauge;
+    var injX = R.x + R.w * (hasGauge ? 0.3 : side.length ? 0.48 : 0.4), injTop = R.y + R.h * 0.1, injH = R.h * 0.5;
+    var inj = injector(injX, injTop, injH, P.cyan, popIn(local, 0, .4).a), prog = easeOut((local - 0.2) / 0.9);
+    if (hasRiel) {
+      var bx = R.x + 10, by = inj.top[1] - 10, bw = R.w * 0.2, bh = R.h * 0.12; pbox(bx, by, bw, bh, P.red, popIn(local, .1).a);
+      plabel(d.riel_texto || "RIEL", bx + bw / 2, by + bh * 0.36, P.white, Math.round(bh * 0.28)); plabel("ALTA PRESIÓN", bx + bw / 2, by + bh * 0.72, P.red, Math.round(bh * 0.19));
+      stroke([[bx + bw, by + bh / 2], [inj.left[0], by + bh / 2]], P.red, 6, prog);
+    }
+    side.slice(0, 3).forEach(function (lb, i) {
+      var txt = typeof lb === "string" ? lb : lb.texto, col = pcol(lb.color, i ? P.cyan : P.green), bw = R.w * 0.36, bh = R.h * 0.11, by = injTop + injH * 0.25 + i * bh * 1.35, bx = R.x + 10;
+      var a = popIn(local, 0.3 + i * 0.35).a; pbox(bx, by, bw, bh, col, a); ctx.save(); ctx.globalAlpha *= a; plabel(txt, bx + bw / 2, by + bh / 2, P.white, Math.round(bh * 0.28)); ctx.restore();
+      ctx.save(); ctx.globalAlpha *= a; stroke([[bx + bw, by + bh / 2], [inj.left[0], by + bh / 2]], col, 4, 1); ctx.restore();
+    });
+    var rx = hasGauge ? injX + R.w * 0.14 : R.x + R.w * 0.86, retY = inj.top[1];
+    var depY = R.y + R.h * 0.72, ret = hasGauge ? [inj.top, [rx, retY], [rx, R.y + R.h * 0.62]] : [inj.top, [rx, retY], [rx, depY]];
+    if (exceso) stripes(ret, P.blue, P.amber, 16, t, 60, prog); else { stroke(ret, P.blue, 7, prog); flowDots(ret, P.amber, t, 80, 46, 6, prog); }
+    if (!hasGauge && d.mostrar_texto_retorno !== false) plabel(d.retorno_texto || "RETORNO", (inj.top[0] + rx) / 2, retY - 26, P.blue, WIDE ? 24 : 28);
+    if (hasDep) {
+      var dw = R.w * 0.2, dh = R.h * 0.18, dx = rx - dw / 2, dy = depY; pbox(dx, dy, dw, dh, P.blue, popIn(local, 0.6).a);
+      plabel("DEPÓSITO", dx + dw / 2, dy + dh * 0.22, P.white, Math.round(dh * 0.15));
+      var lvl = clamp(num(d.nivel_deposito, 0.45), 0, 1) * (0.85 + 0.15 * easeOut(local / 3)); ctx.fillStyle = "rgba(201,154,46,.75)"; ctx.fillRect(dx + 6, dy + dh - 6 - (dh * 0.55) * lvl, dw - 12, (dh * 0.55) * lvl);
+    }
+    if (exceso && d.etiqueta_fuga !== false) { var fy = inj.bottom[1] + R.h * 0.06; plabel(d.etiqueta_fuga || "FUGA INTERNA", injX - 10, fy, P.red, WIDE ? 22 : 26); plabel("DESGASTE", injX - 10, fy + 34, P.amber, WIDE ? 22 : 26); }
+    if (hasGauge) { var m = d.manometro; gauge(R.x + R.w * 0.76, R.y + R.h * 0.36, R.h * 0.26, m.valor, local, m.etiqueta || "PRESIÓN DEL RIEL", m.alerta || ""); }
+  }
+  function pzManometro(R, sc, local) { var d = sc.datos || {}; gauge(R.x + R.w / 2, R.y + R.h * 0.55, Math.min(R.w, R.h) * 0.38, d.valor, local, d.etiqueta || "PRESIÓN", d.alerta || ""); }
+  function pzProbetas(R, sc, local) {
+    var d = sc.datos || {}, items = (d.items || d.probetas || []).slice(0, 6); if (!items.length) items = [{ etiqueta: "1", nivel: .2 }, { etiqueta: "2", nivel: .2 }];
+    var n = items.length, gap = R.w / n, tw = Math.min(110, gap * 0.48), th = R.h * 0.62, top = R.y + R.h * 0.1;
+    items.forEach(function (it, i) {
+      var cx = R.x + gap * (i + .5), x = cx - tw / 2, a = popIn(local, i * 0.12).a, alert = it.alerta === true || it.alerta === "true", col = alert ? P.red : "#C99A2E";
+      ctx.save(); ctx.globalAlpha *= a; rr(x, top, tw, th, 10); ctx.fillStyle = "rgba(141,180,255,.05)"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#B9CCF0"; ctx.stroke();
+      ctx.strokeStyle = "rgba(185,204,240,.6)"; ctx.lineWidth = 2; for (var k = 1; k <= 5; k++) { var yy = top + th * k / 6; ctx.beginPath(); ctx.moveTo(x + 8, yy); ctx.lineTo(x + tw * 0.32, yy); ctx.stroke(); }
+      var lvl = clamp(num(it.nivel, 0.12), 0, 1) * easeOut((local - 0.4 - i * 0.15) / 1.4), fh = (th - 12) * lvl;
+      ctx.fillStyle = col; rr(x + 6, top + th - 6 - fh, tw - 12, Math.max(0, fh), 4); if (fh > 1) ctx.fill();
+      plabel(it.etiqueta || ("N.º " + (i + 1)), cx, top + th + 30, P.white, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800);
+      if (it.valor) plabel(it.valor, cx, top + th + 64, alert ? P.red : P.green, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800, true);
+      if (alert && d.multiplicador) plabel(d.multiplicador, cx, top - 34, P.red, 44, "center", 800);
+      ctx.restore();
+    });
+  }
+  function pzLista(R, sc, local) {
+    var d = sc.datos || {}, items = (d.items || d.puntos || []).slice(0, 4), cols = [P.red, P.cyan, P.green, P.amber];
+    if (d.encabezado) plabel(d.encabezado, R.x + R.w / 2, R.y + 30, P.amber, WIDE ? 26 : 30, "center", 800);
+    var top = R.y + (d.encabezado ? 70 : 20), ch = Math.min(150, (R.h - (top - R.y) - 20) / Math.max(1, items.length) - 22), cw = R.w * 0.86, cx = R.x + (R.w - cw) / 2;
+    items.forEach(function (it, i) {
+      var p = popIn(local, 0.2 + i * 0.5, 0.4); if (p.a <= 0) return; var y = top + i * (ch + 22), col = cols[i % 4];
+      var tt = typeof it === "string" ? it : it.titulo, dt = typeof it === "string" ? "" : it.detalle;
+      ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(0, (1 - p.a) * 20); rr(cx, y, cw, ch, 16); ctx.fillStyle = P.fill; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx + ch * 0.45, y + ch / 2, ch * 0.24, 0, 7); ctx.fill(); plabel(String(i + 1), cx + ch * 0.45, y + ch / 2 + 2, P.white, Math.round(ch * 0.26), "center", 800);
+      var tx = cx + ch * 0.9 + (cw - ch * 0.9) / 2; plabel(tt || "", tx, y + ch * (dt ? 0.38 : 0.5), P.white, pfit(String(tt || "").toUpperCase(), cw - ch * 1.1, WIDE ? 28 : 32, 16, 800), "center", 800);
+      if (dt) plabel(dt, tx, y + ch * 0.68, col, pfit(String(dt).toUpperCase(), cw - ch * 1.1, WIDE ? 22 : 26, 14, 700));
+      ctx.restore();
+    });
+  }
+  function pzManual(R, sc, local, t) {
+    var d = sc.datos || {}, w = R.w * 0.38, h = R.h * 0.62, x = R.x + R.w * 0.06, y = R.y + R.h * 0.12, a = popIn(local, 0).a;
+    pbox(x, y, w, h, P.amber, a); ctx.save(); ctx.globalAlpha *= a;
+    var tl = String(d.titulo || "MANUAL DEL FABRICANTE").toUpperCase().split(" "), half = Math.ceil(tl.length / 2);
+    plabel(tl.slice(0, half).join(" "), x + w / 2, y + h * 0.13, P.white, Math.round(h * 0.06), "center", 800); plabel(tl.slice(half).join(" "), x + w / 2, y + h * 0.22, P.white, Math.round(h * 0.06), "center", 800);
+    for (var i = 0; i < 6; i++) { var lp = easeOut((local - 0.4 - i * 0.15) / 0.4); ctx.fillStyle = "rgba(185,204,240,.55)"; ctx.fillRect(x + w * 0.12, y + h * (0.36 + i * 0.09), w * 0.76 * lp * (i % 3 === 2 ? 0.7 : 1), 6); }
+    ctx.restore();
+    var ln = [[x + w + 30, y + h * 0.45], [R.x + R.w - 20, y + h * 0.45]]; stroke(ln, P.blue, 7, easeOut((local - 0.5) / 0.8)); flowDots(ln, P.amber, t, 70, 52, 6, easeOut((local - 0.5) / 0.8));
+    if (d.nota) plabel(d.nota, (ln[0][0] + ln[1][0]) / 2, y + h * 0.45 - 40, P.amber, WIDE ? 24 : 28);
+  }
+  function pzLupa(R, sc, local, t) {
+    var d = sc.datos || {}, y0 = R.y + R.h * 0.12, bx = R.x + R.w * 0.16, bw = R.w * 0.22, bh = 64, a = popIn(local, 0).a;
+    pbox(bx, y0, bw, bh, P.cyan, a); ctx.save(); ctx.globalAlpha *= a; plabel(d.etiqueta || "UNIÓN", bx + bw / 2, y0 + bh / 2, P.white, 28, "center", 800); ctx.restore();
+    ctx.save(); ctx.globalAlpha *= a; rr(bx + bw, y0 + bh / 2 - 12, R.w * 0.22, 24, 12); ctx.fillStyle = P.blue; ctx.fill(); ctx.restore();
+    var cx = R.x + R.w * 0.5, cy = R.y + R.h * 0.6, r = Math.min(R.w, R.h) * 0.27, z = easeOut((local - 0.3) / 0.6);
+    if (z > 0) {
+      ctx.save(); ctx.globalAlpha *= z; ctx.beginPath(); ctx.arc(cx, cy, r * z, 0, 7); ctx.fillStyle = "#0A1630"; ctx.fill(); ctx.clip();
+      ctx.fillStyle = "#6E93D6"; ctx.fillRect(cx - r, cy - r * 0.35, 2 * r, r * 0.7); ctx.fillStyle = "#081329"; ctx.fillRect(cx - r, cy - r * 0.07, 2 * r, r * 0.14);
+      var px2 = cx + Math.sin(t * 1.4) * r * 0.25; ctx.fillStyle = P.red; ctx.shadowColor = P.red; ctx.shadowBlur = 16; ctx.beginPath(); ctx.arc(px2, cy, r * 0.06, 0, 7); ctx.fill();
+      ctx.restore(); ctx.save(); ctx.globalAlpha *= z; ctx.lineWidth = 6; ctx.strokeStyle = P.white; ctx.beginPath(); ctx.arc(cx, cy, r * z, 0, 7); ctx.stroke(); ctx.restore();
+      if (d.detalle) plabel(d.detalle, cx, cy + r + 40, P.red, WIDE ? 24 : 28);
+    }
+  }
+  function pzLineas(R, sc, local, t) {
+    var d = sc.datos || {}, ls = (d.lineas || [{ etiqueta: "ALTA PRESIÓN", tipo: "alta" }, { etiqueta: "BAJA PRESIÓN", tipo: "baja" }]).slice(0, 4);
+    ls.forEach(function (l, i) {
+      var y = R.y + R.h * (0.18 + i * 0.22), x0 = R.x + R.w * 0.12, x1 = R.x + R.w * 0.88, alta = /alta/i.test(l.tipo || l.etiqueta), col = pcol(l.color, alta ? P.red : P.blue), p = easeOut((local - i * 0.35) / 0.8);
+      if (alta) { var lw = R.w * 0.62, lx = R.x + (R.w - lw) / 2; pbox(lx, y - 30, lw, 60, col, p); ctx.save(); ctx.globalAlpha *= p; plabel(l.etiqueta, R.x + R.w / 2, y, col, WIDE ? 24 : 28, "center", 800); ctx.restore(); }
+      else { plabel(l.etiqueta, R.x + R.w / 2, y - 28, col, WIDE ? 22 : 26, "center", 800); stroke([[x0, y + 10], [x1, y + 10]], col, 7, p); flowDots([[x0, y + 10], [x1, y + 10]], P.amber, t, 60, 54, 5, p); }
+    });
+  }
+  function pzTarjeta(R, sc, local, t) {
+    var d = sc.datos || {}, col = pcol(d.color, P.green), w = R.w * 0.88, h = R.h * 0.42, x = R.x + (R.w - w) / 2, y = R.y + R.h * 0.18, a = popIn(local, 0).a;
+    pbox(x, y, w, h, col, a); ctx.save(); ctx.globalAlpha *= a;
+    var inj = injector(x + w * 0.14, y + h * 0.12, h * 0.6, P.cyan, 1), pts = [inj.bottom, [inj.bottom[0], y + h * 0.82], [x + w * 0.38, y + h * 0.82]];
+    stroke([inj.top, [x + w * 0.38, inj.top[1]]], P.blue, 5, easeOut(local / 0.8)); stroke(pts, P.blue, 5, easeOut(local / 0.8));
+    ctx.fillStyle = P.blue; ctx.beginPath(); ctx.arc(x + w * 0.38, y + h * 0.82, 9, 0, 7); ctx.fill();
+    var ls = (d.lineas || []).slice(0, 4), tx = x + w * 0.69;
+    ls.forEach(function (l, i) { var txt = typeof l === "string" ? l : l.texto, c = pcol(l.color, i === 1 ? P.white : i === 2 ? col : P.white), px = i === 1 ? (WIDE ? 28 : 30) : (WIDE ? 20 : 24);
+      plabel(txt, tx, y + h * (0.28 + i * 0.17), c, pfit(String(txt).toUpperCase(), w * 0.56, px, 14, 800), "center", 800); });
+    ctx.restore();
+  }
+  function pzCierre(sc, local) {
+    var title = sc.titulo || JOB.cta_titulo || JOB.titulo || "", y0 = WIDE ? 260 : 620, maxW = WIDE ? 1400 : 900, px = WIDE ? 84 : 78;
+    pfont(px, 800); var lines = wrap(title, maxW); while (lines.length > 4 && px > 40) { px -= 4; pfont(px, 800); lines = wrap(title, maxW); }
+    var a = popIn(local, 0, .5).a; ctx.save(); ctx.globalAlpha *= a;
+    lines.forEach(function (ln, i) { ctx.fillStyle = P.white; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText(ln, W / 2, y0 + px * (i + 1) * 1.08); });
+    ctx.restore();
+    var cta = JOB.cta_texto || "Información en mi perfil", by = y0 + px * lines.length * 1.08 + 70, p = popIn(local, 0.6, .4);
+    if (p.a > 0) { pfont(WIDE ? 34 : 36, 600); var bw = Math.min(WIDE ? 900 : 940, ctx.measureText(cta).width + 160), bh = 96, bx = W / 2 - bw / 2;
+      ctx.save(); ctx.globalAlpha *= p.a; rr(bx, by, bw, bh, 18); ctx.fillStyle = P.fill; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#2D4A7E"; ctx.stroke();
+      ctx.fillStyle = P.amber; ctx.beginPath(); ctx.arc(bx + 44, by + bh / 2, 10, 0, 7); ctx.fill();
+      pfont(WIDE ? 34 : 36, 600); ctx.fillStyle = P.white; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(cta, bx + 74, by + bh / 2 + 2); ctx.restore(); }
+  }
+
+  function pPortada(alpha) {
+    if (alpha <= 0) return;
+    ctx.save(); ctx.globalAlpha = alpha;
+    var g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#3F8BFA"); g.addColorStop(1, "#1C56D2"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(255,255,255,.06)"; ctx.lineWidth = 2; ctx.beginPath(); for (var d = -H; d < W + H; d += 70) { ctx.moveTo(d, 0); ctx.lineTo(d + H * 0.12, H); } ctx.stroke();
+    var title = String(JOB.titulo || "Diagnóstico").toUpperCase(), x = WIDE ? 140 : 72, maxW = WIDE ? 1500 : 930, px = WIDE ? 104 : 96;
+    pfont(px, 800); var lines = wrap(title, maxW); while (lines.length > 5 && px > 48) { px -= 4; pfont(px, 800); lines = wrap(title, maxW); }
+    var y0 = WIDE ? 230 : 380; ctx.fillStyle = P.amber; ctx.fillRect(x, y0 - 48, 120, 14);
+    ctx.fillStyle = P.white; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; lines.forEach(function (ln, i) { ctx.fillText(ln, x, y0 + px * (i + 1) * 1.04); });
+    var yb = y0 + px * lines.length * 1.04 + 90;
+    if (JOB.subtitulo) { pfont(WIDE ? 44 : 44, 500); wrap(JOB.subtitulo, maxW).slice(0, 3).forEach(function (ln, i) { ctx.fillText(ln, x, yb + i * 58); }); }
+    pill(JOB.categoria_portada || "DIAGNÓSTICO AUTOMOTRIZ", x, WIDE ? 920 : 1530, P.white, WIDE ? 28 : 30, 1, { left: true, fill: "rgba(10,30,90,.55)", textColor: P.white, lw: 3 });
+    ctx.restore();
+  }
+
+  function renderPastillas(t) {
+    ctx.setTransform(PS, 0, 0, PS, 0, 0);
+    pBackground();
+    var i = sceneAt(t), sc = SC[i], st = TL.scenes[i], local = t - st.start, dur = Math.max(.1, st.end - st.start), tipo = sc.tipo || "concepto";
+    var last = i === SC.length - 1 && (tipo === "cierre");
+    var fade = i === 0 ? clamp((t - PORTADA_P) / PORT_FADE, 0, 1) : easeOut(local / 0.3);
+    if (i === 0) local = Math.max(0, t - PORTADA_P + 0.3);
+    var out = i === SC.length - 1 ? 1 : 1 - ease((local - (dur - .2)) / .2);
+    // etiqueta superior (constante)
+    pill(JOB.categoria || "DIAGNÓSTICO AUTOMOTRIZ", W / 2, PL.chipY, P.amber, WIDE ? 24 : 27, 1);
+    ctx.save(); ctx.globalAlpha = clamp(fade * out, 0, 1);
+    if (!last) {
+      var tt = sc.titulo || ""; var tp = pfit(tt, WIDE ? 1700 : 960, PL.titlePx, 30, 700); ctx.fillStyle = P.white; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tt, W / 2, PL.titleY);
+      var R = PL.ill;
+      try {
+        if (tipo === "inyector_retorno") pzInyectorRetorno(R, sc, local, t);
+        else if (tipo === "manometro") pzManometro(R, sc, local, t);
+        else if (tipo === "probetas") pzProbetas(R, sc, local, t);
+        else if (tipo === "lista" || tipo === "concepto") pzLista(R, sc, local, t);
+        else if (tipo === "manual") pzManual(R, sc, local, t);
+        else if (tipo === "lupa") pzLupa(R, sc, local, t);
+        else if (tipo === "lineas") pzLineas(R, sc, local, t);
+        else if (tipo === "tarjeta") pzTarjeta(R, sc, local, t);
+        else if (tipo === "osciloscopio") drawOsciloscopio(sc, R, local);
+        else if (tipo === "pwm") drawPwm(sc, R, local);
+        else if (tipo === "rele") drawRele(sc, R, local, t);
+        else if (tipo === "pinout") drawPinout(sc, R, local, t);
+        else if ((tipo === "libre" || JOB.modo === "libre") && typeof window.renderLibre === "function") { ctx.save(); rr(R.x, R.y, R.w, R.h, 14); ctx.clip(); window.renderLibre(ctx, { t: t, local: local, dur: dur, scene: sc, rect: R, C: C, W: W, H: H, MONO: MONO, SANS: PF }); ctx.restore(); }
+        else pzLista(R, sc, local, t);
+      } catch (e) { plabel("Error en escena: " + e.message, W / 2, R.y + 60, P.red, 26); }
+      // pastillas (aparecen escalonadas durante la escena)
+      var ps = (sc.pastillas || []).slice(0, 4), step = Math.min(1.6, Math.max(0.5, (dur - 1.2) / Math.max(1, ps.length)));
+      var py = WIDE ? PL.pillsY : PL.pillsY, pxs = PL.pillPx;
+      ps.forEach(function (p, k) {
+        var txt = typeof p === "string" ? p : p.texto, col = pcol(p.color, [P.amber, P.blue, P.green, P.white][k % 4]), pp = popIn(local, 0.5 + k * step, .3);
+        var h = pill(txt, WIDE ? PL.pillsX : W / 2, py, col, k === 0 ? pxs : pxs - 3, pp.a, { pop: pp.s, maxW: WIDE ? PL.pillsW : PL.pillsW });
+        py += (h || pxs * 1.85) + 14;
+      });
+      // frase resumen
+      var rp = popIn(local, 0.25, .35);
+      if (sc.resumen) pill(sc.resumen, W / 2, PL.resY, P.amber, PL.resPx, rp.a, { upper: false, pop: rp.s, lw: 4 });
+    } else {
+      pzCierre(sc, local);
+      var cp = popIn(local, 1.0, .35); if (JOB.cta_boton || sc.resumen) pill(JOB.cta_boton || sc.resumen, W / 2, PL.resY, P.amber, PL.resPx, cp.a, { upper: false, pop: cp.s, lw: 4 });
+    }
+    ctx.restore();
+    // barra de progreso
+    ctx.fillStyle = "rgba(255,255,255,.12)"; rr(PL.barX, PL.barY, PL.barW, 8, 4); ctx.fill();
+    ctx.fillStyle = P.amber; rr(PL.barX, PL.barY, Math.max(8, PL.barW * (t / D)), 8, 4); ctx.fill();
+    pPortada(t < PORTADA_P ? 1 : 1 - ease((t - PORTADA_P) / PORT_FADE));
+    window.__lastT = t;
+  }
+
   function render(t) {
     t = clamp(+t || 0, 0, D);
+    if (PAST) return renderPastillas(t);
     ctx.setTransform(PS, 0, 0, PS, 0, 0);
     background();
     var i = sceneAt(t), sc = SC[i], st = TL.scenes[i], local = t - st.start, dur = Math.max(.1, st.end - st.start);

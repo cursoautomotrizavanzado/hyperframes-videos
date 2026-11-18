@@ -1,9 +1,186 @@
-{"id":"demo-ckp","formato":"9:16","fps":60,"voz":"es-MX-JorgeNeural","velocidad":"+8%",
-"titulo":"CKP inductivo: el hueco que la ECU necesita","subtitulo":"Cómo leerlo en el osciloscopio",
-"escenas":[
-{"tipo":"concepto","titulo":"Gira pero no arranca","etiqueta":"SÍNTOMA","texto":"¿El motor gira pero no arranca? Antes de cambiar piezas, mira la señal del sensor CKP.","datos":{"puntos":["Gira","No arranca","Revisa CKP"]},"badges":[{"etiqueta":"Síntoma","valor":"Sin arranque","tipo":"falla"}]},
-{"tipo":"osciloscopio","titulo":"Señal alterna","etiqueta":"CKP INDUCTIVO","texto":"El sensor CKP inductivo genera una señal alterna: cada diente de la rueda fónica produce una onda completa.","datos":{"senal":"ckp_inductivo","rpm":250,"vpp":3},"badges":[{"etiqueta":"Vpp arranque","valor":"3 V","tipo":"senal"},{"etiqueta":"RPM","valor":"250","tipo":"rpm"}]},
-{"tipo":"osciloscopio","titulo":"Rueda 60-2","etiqueta":"REFERENCIA","texto":"En una rueda sesenta menos dos, el hueco de los dientes faltantes aparece como una onda más larga y amplia: es la referencia que usa la ECU para ubicar el cigüeñal.","datos":{"senal":"ckp_inductivo","rpm":250,"vpp":3,"resaltar":"diente_faltante"},"badges":[{"etiqueta":"Rueda","valor":"60-2","tipo":"senal"}]},
-{"tipo":"osciloscopio","titulo":"Señal con ruido","etiqueta":"FALLA","texto":"Si la señal sale plana o con ruido, mide la resistencia del sensor, normalmente entre doscientos y mil quinientos ohmios según el fabricante, y revisa el blindaje del cable.","datos":{"senal":"ckp_inductivo","rpm":250,"vpp":3,"falla":"ruido"},"badges":[{"etiqueta":"Resistencia","valor":"200-1500 Ω","tipo":"resistencia"},{"etiqueta":"Falla","valor":"Ruido","tipo":"falla"}]},
-{"tipo":"concepto","titulo":"Diagnostica con datos","etiqueta":"CIERRE","texto":"Mide en arranque, compara con un motor sano y diagnostica con datos, no con suposiciones.","datos":{"puntos":["Mide en arranque","Compara","Decide con datos"]},"badges":[]}
-]}
+{
+ "id": "demo-pastillas",
+ "formato": "9:16",
+ "fps": 30,
+ "estilo": "pastillas",
+ "categoria": "DIAGNÓSTICO DIÉSEL",
+ "cta_texto": "Información en mi perfil",
+ "cta_boton": "Módulo 0 gratis",
+ "titulo": "Retorno de inyectores: la prueba que revela fugas",
+ "subtitulo": "La prueba que delata un inyector con fuga",
+ "escenas": [
+  {
+   "tipo": "inyector_retorno",
+   "titulo": "Qué es el retorno",
+   "texto": "El retorno es el combustible que el inyector devuelve al depósito por una línea de baja presión.",
+   "datos": {},
+   "pastillas": [
+    {
+     "texto": "Retorno: combustible que el inyector devuelve al depósito",
+     "color": "ambar"
+    },
+    {
+     "texto": "Por una línea de baja presión",
+     "color": "azul"
+    }
+   ],
+   "resumen": "El retorno vuelve al depósito"
+  },
+  {
+   "tipo": "inyector_retorno",
+   "titulo": "Un poco de retorno es normal",
+   "texto": "Un poco es normal, por las holguras internas y por la lubricación.",
+   "datos": {
+    "etiquetas_laterales": [
+     {
+      "texto": "Holguras internas",
+      "color": "verde"
+     },
+     {
+      "texto": "Lubricación",
+      "color": "cian"
+     }
+    ],
+    "deposito": false
+   },
+   "pastillas": [
+    {
+     "texto": "Un poco es normal",
+     "color": "verde"
+    },
+    {
+     "texto": "Por holguras internas",
+     "color": "blanco"
+    },
+    {
+     "texto": "Y por la lubricación",
+     "color": "cian"
+    }
+   ],
+   "resumen": "Normal: holguras y lubricación"
+  },
+  {
+   "tipo": "inyector_retorno",
+   "titulo": "Demasiado retorno",
+   "texto": "Si devuelve demasiado, hay desgaste o fuga interna y la presión del riel se desperdicia.",
+   "datos": {
+    "flujo": "exceso",
+    "riel": false,
+    "manometro": {
+     "valor": 0.25,
+     "etiqueta": "Presión del riel",
+     "alerta": "¡Se desperdicia!"
+    }
+   },
+   "pastillas": [
+    {
+     "texto": "Demasiado retorno = desgaste o fuga interna",
+     "color": "rojo"
+    },
+    {
+     "texto": "Arranque largo",
+     "color": "ambar"
+    },
+    {
+     "texto": "Humo",
+     "color": "ambar"
+    }
+   ],
+   "resumen": "Exceso: fuga interna y síntomas"
+  },
+  {
+   "tipo": "probetas",
+   "titulo": "Compara los inyectores",
+   "texto": "Compara los inyectores entre sí: uno que devuelve ocho veces más tiene una fuga grave.",
+   "datos": {
+    "multiplicador": "× 8",
+    "items": [
+     {
+      "etiqueta": "Inyector 1",
+      "valor": "3 cm³",
+      "nivel": 0.1
+     },
+     {
+      "etiqueta": "Inyector 2",
+      "valor": "3 cm³",
+      "nivel": 0.1
+     },
+     {
+      "etiqueta": "Inyector 3",
+      "valor": "3 cm³",
+      "nivel": 0.1
+     },
+     {
+      "etiqueta": "Inyector 4",
+      "valor": "24 cm³",
+      "nivel": 0.8,
+      "alerta": true
+     }
+    ]
+   },
+   "pastillas": [
+    {
+     "texto": "Compara los inyectores entre sí",
+     "color": "blanco"
+    },
+    {
+     "texto": "Uno devuelve 8 veces más",
+     "color": "rojo"
+    }
+   ],
+   "resumen": "Uno con 8 veces más: fuga grave"
+  },
+  {
+   "tipo": "lista",
+   "titulo": "Si todos están altos",
+   "texto": "Si todos están altos, revisa la presión del riel y las condiciones de la prueba.",
+   "datos": {
+    "encabezado": "Si todos están altos, revisa:",
+    "items": [
+     {
+      "titulo": "Presión del riel",
+      "detalle": "No mayor a la pedida"
+     },
+     {
+      "titulo": "Condiciones de la prueba",
+      "detalle": "Las del manual"
+     }
+    ]
+   },
+   "pastillas": [
+    {
+     "texto": "Todos altos: no es un inyector",
+     "color": "blanco"
+    }
+   ],
+   "resumen": "Todos altos: revisa el sistema"
+  },
+  {
+   "tipo": "lupa",
+   "titulo": "Limpia las uniones",
+   "texto": "Y limpia siempre las uniones antes de desconectar, sin introducir suciedad.",
+   "datos": {
+    "etiqueta": "Unión"
+   },
+   "pastillas": [
+    {
+     "texto": "Limpia las uniones antes de desconectar",
+     "color": "cian"
+    },
+    {
+     "texto": "Sin introducir suciedad",
+     "color": "blanco"
+    }
+   ],
+   "resumen": "Limpia antes de desconectar"
+  },
+  {
+   "tipo": "cierre",
+   "titulo": "Compara entre inyectores y con el manual",
+   "texto": "Compara entre inyectores y con el manual.",
+   "datos": {}
+  }
+ ],
+ "voz": "es-MX-JorgeNeural",
+ "velocidad": "+8%"
+}

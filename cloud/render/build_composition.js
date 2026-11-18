@@ -42,5 +42,11 @@ if (require.main === module) {
   // GSAP local (sin depender de CDN durante el render)
   try { fs.copyFileSync(require.resolve("gsap/dist/gsap.min.js"), path.join(outDir, "gsap.min.js")); }
   catch (e) { console.warn("[build] gsap no instalado localmente:", e.message); }
+  // Fuente Poppins local (estilo Pastillas)
+  try {
+    const fdir = path.join(path.dirname(require.resolve("@fontsource/poppins/package.json")), "files");
+    fs.mkdirSync(path.join(outDir, "fonts"), { recursive: true });
+    for (const w of [500, 600, 700, 800]) fs.copyFileSync(path.join(fdir, `poppins-latin-${w}-normal.woff2`), path.join(outDir, "fonts", `poppins-latin-${w}-normal.woff2`));
+  } catch (e) { console.warn("[build] Poppins no disponible:", e.message); }
   console.log(`[build] composición lista: ${path.join(outDir, "index.html")} (${tl.duration}s, ${job.formato})`);
 }

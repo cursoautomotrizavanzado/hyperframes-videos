@@ -22,6 +22,7 @@ function findChrome() {
   const page = await browser.newPage();
   await page.goto("file://" + path.resolve(html), { waitUntil: "load", timeout: 120000 });
   await page.waitForFunction("window.__render && window.__AD", { timeout: 60000 });
+  await page.evaluate(() => document.fonts && document.fonts.ready);
   const info = await page.evaluate(() => ({ d: window.__AD.duration, w: window.__AD.W, h: window.__AD.H }));
   await page.setViewport({ width: info.w, height: info.h, deviceScaleFactor: 1 });
   const total = Math.ceil(info.d * fps);

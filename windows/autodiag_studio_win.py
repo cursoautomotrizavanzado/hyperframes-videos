@@ -45,7 +45,7 @@ VOICES = {"Jorge · México (masculina)": "es-MX-JorgeNeural", "Sebastián · Ve
 TEMPLATES = {"Automática (la IA elige)": "auto", "Osciloscopio CKP / CMP": "osciloscopio", "PWM / Inyectores": "pwm",
              "Relés ISO / Flujo 12V-24V": "rele", "Pinout ECU": "pinout", "Libre (la IA programa la simulación)": "libre"}
 ESTILOS = {"Osciloscopio Pro (oscuro)": "osciloscopio", "Blueprint técnico (azul)": "blueprint", "Carbono (negro mate)": "carbono",
-           "Neón (morado)": "neon", "Taller claro (fondo blanco)": "claro"}
+           "Neón (morado)": "neon", "Taller claro (fondo blanco)": "claro", "Pastillas azul (sin subtítulos)": "pastillas"}
 RATES = {"Pausada": "-5%", "Normal": "+0%", "Ágil (reels)": "+8%", "Rápida": "+15%"}
 
 
@@ -165,7 +165,10 @@ TPL_HELP = {
 }
 
 
-def build_prompt(idea, tpl, exact, formato):
+PAST_TXT = 'ESTILO PASTILLAS (obligatorio en este video): cada escena DEBE incluir además "pastillas": 1 a 3 objetos {"texto":"idea clave dicha en esa escena, máx 40 caracteres","color":"verde|blanco|cian|rojo|ambar|azul"} y "resumen": frase corta de máx 32 caracteres que resume la escena. "titulo" máx 32 caracteres. La ÚLTIMA escena es de tipo "cierre" (su "titulo" es la conclusión en una frase).\nTipos de escena disponibles en este estilo (elige el que ilustre literalmente lo narrado):\n- inyector_retorno → datos: {"riel":true|false,"deposito":true|false,"flujo":"normal|exceso","etiquetas_laterales":[{"texto":"HOLGURAS INTERNAS","color":"verde"}],"manometro":{"valor":0.25,"etiqueta":"PRESIÓN DEL RIEL","alerta":"¡SE DESPERDICIA!"},"retorno_texto":"RETORNO"}\n- manometro → datos: {"valor":0.0-1.0,"etiqueta":"PRESIÓN DEL RIEL","alerta":"texto opcional"}\n- probetas → datos: {"multiplicador":"× 8","items":[{"etiqueta":"INYECTOR 1","valor":"3 cm³","nivel":0.1,"alerta":false}]} (1 a 6 probetas; nivel 0-1 proporcional al valor)\n- lista → datos: {"encabezado":"SI TODOS ESTÁN ALTOS, REVISA:","items":[{"titulo":"PRESIÓN DEL RIEL","detalle":"NO MAYOR A LA PEDIDA"}]} (máx 4)\n- manual → datos: {"titulo":"MANUAL DEL FABRICANTE","nota":"texto corto opcional"}\n- lupa → datos: {"etiqueta":"UNIÓN","detalle":"texto corto opcional"}\n- lineas → datos: {"lineas":[{"etiqueta":"RIEL - ALTA PRESIÓN","tipo":"alta"},{"etiqueta":"RETORNO - BAJA PRESIÓN","tipo":"baja"}]}\n- tarjeta → datos: {"color":"verde","lineas":[{"texto":"PRIMERO","color":"blanco"},{"texto":"CONECTA LAS MANGUERAS","color":"blanco"},{"texto":"ANTES DE ARRANCAR","color":"verde"}]}\n- osciloscopio, pwm, rele, pinout → mismos datos de arriba\n- cierre → datos: {}'
+
+
+def build_prompt(idea, tpl, exact, formato, estilo="osciloscopio"):
     if tpl == "auto":
         tipos = "Elige para cada escena el tipo que mejor ilustre literalmente lo narrado: concepto, osciloscopio, pwm, rele, pinout."
     elif tpl == "libre":
@@ -197,8 +200,8 @@ Esquemas de "datos" por tipo:
 - rele → {TPL_HELP['rele']}
 - pinout → {TPL_HELP['pinout']}
 - concepto → {TPL_HELP['concepto']}
-{libre}Responde SOLO JSON válido con esta forma:
-{{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal"}}],"datos":{{}}}}]{',"codigo_libre":"..."' if tpl == "libre" else ""}}}"""
+{(PAST_TXT + chr(10)) if estilo == "pastillas" else ""}{libre}Responde SOLO JSON válido con esta forma:
+{{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal"}}],"datos":{{}}{',"pastillas":[{"texto":"...","color":"verde"}],"resumen":"..."' if estilo == "pastillas" else ""}}}]{',"codigo_libre":"..."' if tpl == "libre" else ""}}}"""
 
 
 def gemini_models(key):
@@ -249,7 +252,8 @@ def parse_scenes_text(txt):
 
 
 def normalize(d, fallback=""):
-    tipos = ("concepto", "osciloscopio", "pwm", "rele", "pinout", "libre")
+    tipos = ("concepto", "osciloscopio", "pwm", "rele", "pinout", "libre", "inyector_retorno", "manometro", "probetas", "lista",
+             "manual", "lupa", "lineas", "tarjeta", "cierre")
     d["escenas"] = [s for s in d.get("escenas", []) if s and s.get("texto")]
     if not d["escenas"]:
         d["escenas"] = [{"tipo": "concepto", "titulo": d.get("titulo", ""), "texto": d.get("guion_voz") or fallback}]
@@ -471,11 +475,15 @@ def render_job(profile, job, audio_path, progress):
     return dest
 
 
-def make_job(data, formato, fps, voz, velocidad, plantilla, estilo="osciloscopio"):
+def make_job(data, formato, fps, voz, velocidad, plantilla, estilo="osciloscopio", extras=None):
     job = json.loads(json.dumps(data))
     job.update({"id": "ad" + format(int(time.time() * 1000), "x"), "formato": formato, "fps": int(fps), "voz": voz,
                 "velocidad": velocidad, "plantilla": plantilla, "estilo": estilo, "modo": "libre" if job.get("codigo_libre") else "plantilla",
                 "created": datetime.now().isoformat(timespec="seconds")})
+    if estilo == "pastillas":
+        ex = extras or {}
+        job.update({"categoria": ex.get("categoria") or "DIAGNÓSTICO AUTOMOTRIZ", "categoria_portada": ex.get("categoriaPortada") or "DIAGNÓSTICO AUTOMOTRIZ",
+                    "cta_texto": ex.get("ctaTexto") or "Información en mi perfil", "cta_boton": ex.get("ctaBoton") or "", "subtitulos": False})
     job["marcas_tiempo_estimadas"] = estimate_timeline(job)
     return job
 
@@ -695,6 +703,23 @@ class App(ctk.CTk):
         self.label(col, "VOZ REAL (EDGE-TTS)").pack(fill="x")
         self.btn(col, "🔊 Probar voz", self.test_voice, "cy").pack(fill="x")
 
+        self.past_frame = ctk.CTkFrame(left, fg_color=C["panel2"], corner_radius=10)
+        self.past_entries = {}
+        for i, (key, title, ph) in enumerate((("categoria", "ETIQUETA SUPERIOR", "DIAGNÓSTICO DIÉSEL"), ("categoriaPortada", "ETIQUETA DE PORTADA", "DIAGNÓSTICO AUTOMOTRIZ"),
+                                              ("ctaTexto", "CIERRE: TEXTO", "Información en mi perfil"), ("ctaBoton", "CIERRE: BOTÓN", "Módulo 0 gratis"))):
+            cell = ctk.CTkFrame(self.past_frame, fg_color="transparent")
+            cell.grid(row=i // 2, column=i % 2, sticky="ew", padx=8, pady=4)
+            self.past_frame.grid_columnconfigure(i % 2, weight=1)
+            self.label(cell, title).pack(fill="x")
+            e = ctk.CTkEntry(cell, placeholder_text=ph, font=self.F)
+            e.pack(fill="x")
+            e.bind("<FocusOut>", lambda _e: self.save_past_fields())
+            self.enable_clipboard(e)
+            self.past_entries[key] = e
+        self.past_anchor = ctk.CTkFrame(left, fg_color="transparent", height=1)
+        self.past_anchor.pack(fill="x")
+        self.style_var.trace_add("write", lambda *a: self.toggle_past())
+
         arow = ctk.CTkFrame(left, fg_color="transparent")
         arow.pack(fill="x", pady=6)
         self.btn(arow, "🎙️ Audio propio (opcional)", self.pick_audio).pack(side="left")
@@ -737,6 +762,22 @@ class App(ctk.CTk):
         self.r_status.pack(fill="x", padx=16, pady=6)
         self.btn(right, "📂 Abrir carpeta Videos_Listos", self.open_videos).pack(fill="x", padx=16, pady=(20, 8))
 
+    def past_fields(self):
+        return {k: e.get().strip() for k, e in getattr(self, "past_entries", {}).items()}
+
+    def save_past_fields(self):
+        p = self.P()
+        p.update(self.past_fields())
+        p["estilo"] = ESTILOS.get(self.style_var.get(), "osciloscopio")
+        self.save()
+
+    def toggle_past(self):
+        if ESTILOS.get(self.style_var.get()) == "pastillas":
+            self.past_frame.pack(fill="x", pady=4, after=self.past_anchor)
+        else:
+            self.past_frame.pack_forget()
+        self.save_past_fields()
+
     def pick_audio(self):
         p = filedialog.askopenfilename(title="Audio de narración", filetypes=[("Audio", "*.mp3 *.m4a *.wav *.ogg"), ("Todos", "*.*")])
         self.audio_path = p or None
@@ -767,7 +808,7 @@ class App(ctk.CTk):
 
     def job_from_ui(self):
         return make_job(self.current_data(), self.fmt_var.get(), self.fps_var.get(), VOICES[self.voice_var.get()],
-                        RATES[self.rate_var.get()], TEMPLATES[self.tpl_var.get()], ESTILOS[self.style_var.get()])
+                        RATES[self.rate_var.get()], TEMPLATES[self.tpl_var.get()], ESTILOS[self.style_var.get()], self.past_fields())
 
     def show_data(self, d):
         self.data = d
@@ -791,7 +832,7 @@ class App(ctk.CTk):
         def work():
             try:
                 d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"),
-                                              build_prompt(idea, TEMPLATES[self.tpl_var.get()], self.exact_var.get(), self.fmt_var.get())), idea)
+                                              build_prompt(idea, TEMPLATES[self.tpl_var.get()], self.exact_var.get(), self.fmt_var.get(), ESTILOS[self.style_var.get()])), idea)
                 self.ui(self.show_data, d)
                 self.ui(lambda: self.gen_status.configure(text=f"✅ Listo: {len(d['escenas'])} escenas", text_color=C["green"]))
                 self.ui(self.preview)
@@ -824,7 +865,7 @@ class App(ctk.CTk):
         if not texto:
             return messagebox.showwarning(APP_NAME, "Pega primero tu texto narrado en la casilla GUION DE VOZ")
         self.clipboard_clear()
-        self.clipboard_append(build_prompt(texto, TEMPLATES[self.tpl_var.get()], True, self.fmt_var.get()))
+        self.clipboard_append(build_prompt(texto, TEMPLATES[self.tpl_var.get()], True, self.fmt_var.get(), ESTILOS[self.style_var.get()]))
         self.r_status.configure(text="🤖 Prompt copiado. Pégalo en Claude o Gemini y pega su respuesta en ESCENAS.", text_color=C["cyan"])
 
     def test_voice(self):
@@ -1013,9 +1054,9 @@ class App(ctk.CTk):
                 try:
                     setv(r, "Estado", "⏳ Generando guion…")
                     idea = guion if guion else tema
-                    d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), build_prompt(idea, tpl, bool(guion), fmt)), idea)
+                    d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), build_prompt(idea, tpl, bool(guion), fmt, est)), idea)
                     self.blog(f"   ✔ Guion: {len(d['guion_voz'].split())} palabras, {len(d['escenas'])} escenas")
-                    job = make_job(d, fmt, fps, voz, rate, tpl, est)
+                    job = make_job(d, fmt, fps, voz, rate, tpl, est, p)
                     setv(r, "Estado", "⏳ Renderizando…")
                     dest = render_job(p, job, None, lambda s: self.blog("   " + s) if ("Descargando" in s or "Enviando" in s) else None)
                     setv(r, "Archivo_MP4", dest)
@@ -1126,6 +1167,11 @@ class App(ctk.CTk):
             self.model_menu.configure(values=p["models"])
         self.model_var.set(p.get("model", "gemini-2.5-flash"))
         self.priv_var.set("Público" if p.get("private") is False else "Privado")
+        for k, e in getattr(self, "past_entries", {}).items():
+            e.delete(0, "end"); e.insert(0, p.get(k, ""))
+        inv = {v: k for k, v in ESTILOS.items()}
+        if hasattr(self, "style_var") and p.get("estilo") in inv:
+            self.style_var.set(inv[p["estilo"]])
         self.backend_var.set("Worker / Servidor" if p.get("backend") == "proxy" else "GitHub Actions directo")
         self.profile_menu.configure(values=list(self.store["profiles"]))
         self.profile_var.set(self.store["active"])
