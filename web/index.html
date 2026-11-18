@@ -244,6 +244,13 @@ function toast(msg, ms) { const t = $("toast"); t.textContent = msg; t.style.dis
 function setStatus(el, state, txt) { el.className = "status " + (state || ""); el.querySelector("span").textContent = txt; }
 function logTo(el, s) { el.style.display = "block"; el.textContent += s + "\n"; el.scrollTop = el.scrollHeight; }
 function b64utf8(str) { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+async function copyText(t) {
+  const CB = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Clipboard;
+  try { if (CB) { await CB.write({ string: t }); return true; } } catch (e) {}
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+  const ta = document.createElement("textarea"); ta.value = t; ta.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); return ok;
+}
 function fileToB64(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); }); }
 function blobToB64(blob) { return fileToB64(blob); }
 function openExternal(url) {
@@ -462,7 +469,7 @@ $("btnGen").onclick = async () => {
   const idea = $("idea").value.trim(); if (!idea) return toast("Escribe la idea o pega tu guion");
   const btn = $("btnGen"); btn.disabled = true; const st = $("genStatus"); st.style.display = "flex"; setStatus(st, "wait", "Gemini está escribiendo el guion y diseñando las escenas…");
   try { const d = normalize(await callGemini(buildPrompt(idea, $("tpl").value, $("exact").checked, FORMATO)), idea); showData(d); setStatus(st, "ok", "✅ Listo: " + d.escenas.length + " escenas"); }
-  catch (e) { setStatus(st, "", "❌ " + e.message); }
+  catch (e) { setStatus(st, "", "❌ " + e.message); toast("❌ " + e.message, 6000); }
   btn.disabled = false;
 };
 function parseScenes(txt) {
@@ -475,14 +482,14 @@ function parseScenes(txt) {
 $("btnPromptCopy").onclick = async () => {
   const t = $("guion").value.trim() || $("idea").value.trim(); if (!t) return toast("Pega primero tu texto narrado en la casilla Guion");
   const pr = buildPrompt(t, $("tpl").value, true, FORMATO);
-  try { await navigator.clipboard.writeText(pr); } catch (e) { $("scenesJson").value = pr; $("scenesJson").select(); document.execCommand("copy"); $("scenesJson").value = ""; }
-  document.querySelector("details").open = true; toast("🤖 Prompt copiado: pégalo en Claude o Gemini y pega su respuesta en Escenas", 5000);
+  document.querySelector("details").open = true;
+  toast((await copyText(pr)) ? "🤖 Prompt copiado: pégalo en Claude o Gemini y pega su respuesta en Escenas" : "No se pudo copiar el prompt", 5000);
 };
 $("btnApplyJson").onclick = () => { try { const o = parseScenes($("scenesJson").value); DATA = normalize(Object.assign({}, DATA || {}, o)); $("guion").value = DATA.guion_voz; updatePreview(); toast("Aplicado"); } catch (e) { toast("JSON inválido: " + e.message); } };
 $("guion").addEventListener("change", updatePreview); $("estilo").addEventListener("change", updatePreview); $("titulo").addEventListener("change", updatePreview);
-$("btnCopyGuion").onclick = async () => { const t = $("guion").value.trim(); try { await navigator.clipboard.writeText(t); toast("Guion copiado"); } catch (e) { $("guion").select(); document.execCommand("copy"); toast("Guion copiado"); } };
+$("btnCopyGuion").onclick = async () => { const t = $("guion").value.trim(); if (!t) return toast("El guion está vacío"); toast((await copyText(t)) ? "Guion copiado" : "No se pudo copiar"); };
 $("btnSpeak").onclick = () => {
-  if (!("speechSynthesis" in window)) return toast("Este dispositivo no tiene voz de prueba");
+  if (!("speechSynthesis" in window)) return toast("La voz de prueba no está disponible en el APK; la voz real se escucha en el MP4", 5000);
   if (speechSynthesis.speaking) { speechSynthesis.cancel(); return; }
   const u = new SpeechSynthesisUtterance($("guion").value); u.lang = "es-MX"; u.rate = 1.05;
   const v = speechSynthesis.getVoices().find((x) => /^es/.test(x.lang)); if (v) u.voice = v;
@@ -537,7 +544,7 @@ $("btnProvision").onclick = async () => { const b = $("btnProvision"); b.disable
   try { await provision(); refreshLeds(); toast("🚀 Nube lista"); } catch (e) { logTo($("provLog"), "❌ " + e.message); setStatus($("ghStatus"), "", "🔴 " + e.message); } b.disabled = false; };
 $("btnRenderDeploy").onclick = () => { const p = P(); if (!p.cloudReady) return toast("Primero Auto-Configura tu nube (paso 2)"); if (p.private !== false) toast("Render necesita el repositorio público (cámbialo y vuelve a Auto-Configurar)", 6000);
   openExternal("https://render.com/deploy?repo=" + encodeURIComponent("https://github.com/" + p.owner + "/" + p.repo)); };
-$("btnCopyWorker").onclick = async () => { try { await navigator.clipboard.writeText((window.CLOUD_FILES || {})["worker/worker.js"] || ""); toast("worker.js copiado"); } catch (e) { toast("No se pudo copiar"); } };
+$("btnCopyWorker").onclick = async () => { toast((await copyText((window.CLOUD_FILES || {})["worker/worker.js"] || "")) ? "worker.js copiado" : "No se pudo copiar"); };
 $("btnPxTest").onclick = async () => { const p = P(); p.proxyUrl = $("pxUrl").value.trim().replace(/\/+$/, ""); p.proxyKey = $("pxKey").value.trim();
   try { const r = await fetch(p.proxyUrl + "/api/jobs/ping", { headers: { "X-App-Key": p.proxyKey } }); if (r.status === 401) throw new Error("App Key incorrecta"); p.proxyOk = true; toast("✅ Servidor conectado"); }
   catch (e) { p.proxyOk = false; toast("❌ " + e.message); } await persist(); refreshLeds(); };
@@ -580,7 +587,7 @@ function pctFor(st) { if (st.state === "ok") return 100; const s = String(st.ste
 
 $("btnRender").onclick = async () => {
   const job = collectJob(); if (!job) return toast("Primero genera el guion con Gemini");
-  const btn = $("btnRender"), bar = $("prog"), S = $("rStatus"), L = $("rLog"); btn.disabled = true; L.textContent = ""; L.style.display = "none";
+  const btn = $("btnRender"), bar = $("prog"), S = $("rStatus"), L = $("rLog"); btn.disabled = true; S.scrollIntoView({ behavior: "smooth", block: "center" }); L.textContent = ""; L.style.display = "none";
   job.id = "ad" + Date.now().toString(36); const t0 = Date.now();
   try {
     const be = backend(); let audioB64 = null; const f = $("audioFile").files[0];
@@ -602,7 +609,7 @@ $("btnRender").onclick = async () => {
     await saveFile(name, blob); be.cleanup(id);
     bar.style.width = "100%"; setStatus(S, "ok", `✅ Listo: ${name} (${(blob.size / 1e6).toFixed(1)} MB)`);
     STORE.history.unshift({ name, at: new Date().toLocaleString(), size: blob.size }); STORE.history = STORE.history.slice(0, 15); await persist(); renderHistory();
-  } catch (e) { setStatus(S, "", "❌ " + e.message); }
+  } catch (e) { setStatus(S, "", "❌ " + e.message); toast("❌ " + e.message, 6000); }
   btn.disabled = false;
 };
 function renderHistory() { $("hist").innerHTML = (STORE.history || []).map((h) => `<div><span>🎞️ ${h.name}</span><span>${h.at}</span></div>`).join(""); }
