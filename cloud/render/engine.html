@@ -42,6 +42,22 @@ window.__PREVIEW = /*__PREVIEW__*/false;
   var C = { bg: "#080D16", grid: "#0D1626", grid2: "#14223A", panel: "#172132", panel2: "#0F1828", border: "#2A3B54",
     orange: "#F76015", cyan: "#00E5FF", red: "#FF3B30", green: "#34C759", yellow: "#FFD60A",
     text: "#E8EEF7", dim: "#7F92AE", light: "#F3F6FA", ink: "#0B1220" };
+  C.screen = "#050A12"; C.hud = "rgba(15,24,40,.92)"; C.box = "rgba(15,24,40,.9)"; C.sub = "#FFFFFF"; C.subDim = "rgba(232,238,247,.55)"; C.gridMode = "mm";
+  /* ---------- Estilos visuales (job.estilo) ---------- */
+  var ESTILOS = {
+    osciloscopio: {},
+    blueprint: { bg: "#0A2342", grid: "rgba(255,255,255,.06)", grid2: "rgba(255,255,255,.16)", panel: "#0E2C52", panel2: "#0B2546", border: "#3B6A9E",
+      screen: "#061A33", hud: "rgba(10,35,66,.94)", box: "rgba(8,30,58,.92)", orange: "#FFB020", dim: "#9DB8D9" },
+    carbono: { bg: "#111214", grid: "#17181B", grid2: "#202226", panel: "#1C1E22", panel2: "#141518", border: "#34373D", screen: "#0A0B0D",
+      hud: "rgba(20,21,24,.94)", box: "rgba(20,21,24,.92)", cyan: "#3FD0FF", dim: "#8C9099", gridMode: "diag" },
+    neon: { bg: "#07020F", grid: "#120724", grid2: "#1E0B3A", panel: "#140A26", panel2: "#0D0619", border: "#4B1F86", screen: "#05010C",
+      hud: "rgba(13,6,25,.94)", box: "rgba(13,6,25,.92)", orange: "#FF2BD6", cyan: "#00F0FF", yellow: "#F5FF3B", dim: "#A07FD6" },
+    claro: { bg: "#EEF2F7", grid: "#E1E7EF", grid2: "#CFD8E4", panel: "#FFFFFF", panel2: "#F4F7FB", border: "#C5D0DE", screen: "#0B1220",
+      hud: "rgba(255,255,255,.95)", box: "rgba(244,247,251,.95)", text: "#0B1220", dim: "#55657D", cyan: "#0091B8", yellow: "#C99A00", green: "#1E9E4A",
+      sub: "#0B1220", subDim: "rgba(11,18,32,.45)" }
+  };
+  (function () { var st = ESTILOS[String(JOB.estilo || "osciloscopio").toLowerCase()] || {}; for (var k in st) C[k] = st[k]; })();
+  var LIGHT = String(JOB.estilo || "").toLowerCase() === "claro";
   var MONO = '"JetBrains Mono","Consolas","DejaVu Sans Mono","Noto Sans Mono",monospace';
   var SANS = '"Inter","Segoe UI","Noto Sans","DejaVu Sans",Arial,sans-serif';
   var TIPO_COLOR = { voltaje: C.red, alimentacion: C.red, positivo: C.red, masa: C.green, tierra: C.green,
@@ -134,6 +150,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
   /* ---------- Fondo milimetrado ---------- */
   function background() {
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+    if (C.gridMode === "diag") { ctx.lineWidth = 6; ctx.strokeStyle = C.grid; ctx.beginPath(); for (var d = -H; d < W; d += 16) { ctx.moveTo(d, 0); ctx.lineTo(d + H, H); } ctx.stroke(); return; }
     ctx.lineWidth = 1; ctx.strokeStyle = C.grid; ctx.beginPath();
     for (var x = 0; x <= W; x += 20) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); }
     for (var y = 0; y <= H; y += 20) { ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); }
@@ -170,7 +187,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var r = L.hook, label = sc.etiqueta || TIPO_LABEL[sc.tipo] || "DIAGNÓSTICO", title = sc.titulo || JOB.titulo || "";
     ctx.save(); ctx.globalAlpha = alpha;
     if (WIDE) {
-      ctx.fillStyle = "rgba(15,24,40,.92)"; ctx.fillRect(0, 0, W, 70); ctx.fillStyle = C.border; ctx.fillRect(0, 70, W, 2);
+      ctx.fillStyle = C.hud; ctx.fillRect(0, 0, W, 70); ctx.fillStyle = C.border; ctx.fillRect(0, 70, W, 2);
       font(22, 700, MONO); var cw = ctx.measureText(label).width + 36; rr(r.x, 17, cw, 38, 19); ctx.fillStyle = C.orange; ctx.fill(); text(label, r.x + 18, 44, "#fff");
       font(36, 800); text(title, r.x + cw + 24, 48, C.text);
     } else {
@@ -188,7 +205,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
   function niceV(v) { var c = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50]; for (var i = 0; i < c.length; i++) if (c[i] >= v) return c[i]; return 100; }
   function scopeScreen(r) {
     var g = { x: r.x + 24, y: r.y + 70, w: r.w - 48, h: r.h - 150 };
-    rr(g.x - 6, g.y - 6, g.w + 12, g.h + 12, 10); ctx.fillStyle = "#050A12"; ctx.fill();
+    rr(g.x - 6, g.y - 6, g.w + 12, g.h + 12, 10); ctx.fillStyle = C.screen; ctx.fill();
     ctx.lineWidth = 1; ctx.strokeStyle = "rgba(0,229,255,.12)"; ctx.beginPath();
     for (var i = 0; i <= 10; i++) { var x = g.x + g.w * i / 10; ctx.moveTo(x + .5, g.y); ctx.lineTo(x + .5, g.y + g.h); }
     for (i = 0; i <= 8; i++) { var y = g.y + g.h * i / 8; ctx.moveTo(g.x, y + .5); ctx.lineTo(g.x + g.w, y + .5); }
@@ -309,7 +326,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var b = P(40, 260); rr(b[0], b[1], 120 * s, 170 * s, 12); ctx.fillStyle = C.panel2; ctx.fill(); ctx.strokeStyle = C.red; ctx.lineWidth = 3; ctx.stroke();
     font(30 * s + 6, 900, MONO); text("+" + V + "V", b[0] + 60 * s, b[1] + 95 * s, C.red, "center"); font(18 * s + 4, 700, MONO); text("BAT", b[0] + 60 * s, b[1] + 135 * s, C.dim, "center");
     // caja del relé
-    var rb = P(300, 120); rr(rb[0], rb[1], 300 * s, 430 * s, 16); ctx.fillStyle = "rgba(15,24,40,.9)"; ctx.fill(); ctx.strokeStyle = C.border; ctx.lineWidth = 3; ctx.stroke();
+    var rb = P(300, 120); rr(rb[0], rb[1], 300 * s, 430 * s, 16); ctx.fillStyle = C.box; ctx.fill(); ctx.strokeStyle = C.border; ctx.lineWidth = 3; ctx.stroke();
     // bobina
     var cx0 = P(360, 360), coilW = 60 * s, coilH = 150 * s;
     ctx.save(); glowLine(coilOn ? C.yellow : C.dim, 4, coilOn ? 14 : 0); ctx.beginPath();
@@ -351,8 +368,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var legendH = Math.min(pins.length, WIDE ? 8 : 6) * (WIDE ? 50 : 54) + 20;
     var cw = r.w - 80, chH = Math.min((r.h - 120 - legendH), cw / cols * rows * 1.05);
     var cell = Math.min(cw / cols, chH / rows), bw = cell * cols, bh = cell * rows, bx = r.x + (r.w - bw) / 2, by = r.y + 80;
-    rr(bx - 24, by - 24, bw + 48, bh + 48, 22); ctx.fillStyle = "#1C2638"; ctx.fill(); ctx.strokeStyle = C.border; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = "#1C2638"; ctx.fillRect(bx + bw / 2 - 60, by - 44, 120, 24);
+    rr(bx - 24, by - 24, bw + 48, bh + 48, 22); ctx.fillStyle = C.panel2; ctx.fill(); ctx.strokeStyle = C.border; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = C.panel2; ctx.fillRect(bx + bw / 2 - 60, by - 44, 120, 24);
     var map = {}; pins.forEach(function (p) { map[String(p.n)] = p; });
     for (var i = 0; i < n; i++) {
       var num1 = i + 1, cx = bx + (i % cols + .5) * cell, cy = by + (Math.floor(i / cols) + .5) * cell, p = map[String(num1)];
@@ -435,9 +452,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       var tw = ln.reduce(function (a, b) { return a + b.w; }, 0), x = WIDE ? r.x + (r.w - tw) / 2 : r.x, y = r.y + fs * (li + 1) * 1.15;
       ln.forEach(function (it) {
         var w = TL.words[it.i], active = t >= w.start && t <= w.end + 0.08, spoken = t > w.end;
-        ctx.lineWidth = 10; ctx.strokeStyle = "rgba(0,0,0,.85)"; ctx.lineJoin = "round"; ctx.strokeText(it.s, x, y);
+        ctx.lineWidth = 10; ctx.strokeStyle = LIGHT ? "rgba(255,255,255,.9)" : "rgba(0,0,0,.85)"; ctx.lineJoin = "round"; ctx.strokeText(it.s, x, y);
         if (active) { var sc = 1 + 0.06 * Math.sin(clamp((t - w.start) / Math.max(.05, w.end - w.start), 0, 1) * Math.PI); var hw = ctx.measureText(it.s.trim()).width / 2; ctx.save(); ctx.translate(x + hw, y); ctx.scale(sc, sc); ctx.translate(-hw, 0); ctx.shadowColor = C.cyan; ctx.shadowBlur = 18; text(it.s, 0, 0, C.cyan); ctx.restore(); }
-        else text(it.s, x, y, spoken ? "#FFFFFF" : "rgba(232,238,247,.55)");
+        else text(it.s, x, y, spoken ? C.sub : C.subDim);
         x += it.w;
       });
     });

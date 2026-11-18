@@ -116,6 +116,8 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
             </select></div>
           <div><label>Velocidad</label>
             <select id="rate"><option value="-5%">Pausada</option><option value="+0%">Normal</option><option value="+8%" selected>Ágil (reels)</option><option value="+15%">Rápida</option></select></div>
+          <div><label>Estilo visual</label>
+            <select id="estilo"><option value="osciloscopio">Osciloscopio Pro (oscuro)</option><option value="blueprint">Blueprint técnico (azul)</option><option value="carbono">Carbono (negro mate)</option><option value="neon">Neón (morado)</option><option value="claro">Taller claro (fondo blanco)</option></select></div>
           <div><label>FPS</label><select id="fps"><option value="60" selected>60</option><option value="30">30 (más rápido)</option></select></div>
         </div>
         <label>Audio propio (opcional, MP3/M4A/WAV)</label>
@@ -136,7 +138,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
           <button class="b" id="btnSpeak">🔊 Voz de prueba</button>
           <button class="b" id="btnHtml">⬇️ HTML HyperFrames</button>
         </div>
-        <div class="row" style="margin-top:8px"><button class="b cy" id="btnPromptCopy">🤖 Copiar prompt para Claude/Gemini</button></div>
+        <div class="row" style="margin-top:8px"><button class="b cy" id="btnPromptCopy">🤖 Generar prompt (desde Guion)</button></div>
         <details><summary>Escenas (JSON — pega aquí la respuesta de Claude/Gemini)</summary>
           <textarea class="code" id="scenesJson" spellcheck="false"></textarea>
           <div class="row"><button class="b cy" id="btnApplyJson">✅ Aplicar escenas pegadas</button></div>
@@ -433,7 +435,7 @@ function collectJob() {
   if (!DATA) return null;
   const job = JSON.parse(JSON.stringify(DATA));
   job.formato = FORMATO; job.fps = +$("fps").value; job.voz = $("voice").value; job.velocidad = $("rate").value;
-  job.titulo = $("titulo").value.trim() || job.titulo; job.plantilla = $("tpl").value; job.modo = job.codigo_libre ? "libre" : "plantilla";
+  job.titulo = $("titulo").value.trim() || job.titulo; job.plantilla = $("tpl").value; job.estilo = $("estilo").value; job.modo = job.codigo_libre ? "libre" : "plantilla";
   const g = $("guion").value.trim();
   if (g && g !== job.guion_voz) { // el usuario editó el guion: re-repartir palabras entre escenas
     const words = g.split(/\s+/), counts = job.escenas.map((s) => s.texto.split(/\s+/).length), tot = counts.reduce((a, b) => a + b, 0); let k = 0;
@@ -471,13 +473,13 @@ function parseScenes(txt) {
   return Array.isArray(o) ? { escenas: o } : o;
 }
 $("btnPromptCopy").onclick = async () => {
-  const t = $("idea").value.trim() || $("guion").value.trim(); if (!t) return toast("Pega primero tu texto narrado arriba");
+  const t = $("guion").value.trim() || $("idea").value.trim(); if (!t) return toast("Pega primero tu texto narrado en la casilla Guion");
   const pr = buildPrompt(t, $("tpl").value, true, FORMATO);
   try { await navigator.clipboard.writeText(pr); } catch (e) { $("scenesJson").value = pr; $("scenesJson").select(); document.execCommand("copy"); $("scenesJson").value = ""; }
   document.querySelector("details").open = true; toast("🤖 Prompt copiado: pégalo en Claude o Gemini y pega su respuesta en Escenas", 5000);
 };
 $("btnApplyJson").onclick = () => { try { const o = parseScenes($("scenesJson").value); DATA = normalize(Object.assign({}, DATA || {}, o)); $("guion").value = DATA.guion_voz; updatePreview(); toast("Aplicado"); } catch (e) { toast("JSON inválido: " + e.message); } };
-$("guion").addEventListener("change", updatePreview); $("titulo").addEventListener("change", updatePreview);
+$("guion").addEventListener("change", updatePreview); $("estilo").addEventListener("change", updatePreview); $("titulo").addEventListener("change", updatePreview);
 $("btnCopyGuion").onclick = async () => { const t = $("guion").value.trim(); try { await navigator.clipboard.writeText(t); toast("Guion copiado"); } catch (e) { $("guion").select(); document.execCommand("copy"); toast("Guion copiado"); } };
 $("btnSpeak").onclick = () => {
   if (!("speechSynthesis" in window)) return toast("Este dispositivo no tiene voz de prueba");

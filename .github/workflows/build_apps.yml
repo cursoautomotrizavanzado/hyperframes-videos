@@ -20,18 +20,30 @@ jobs:
         continue-on-error: true
         shell: python
         run: |
-          import shutil, os, sys
+          import shutil, os, sys, traceback
           shutil.copytree("../cloud", "cloud", dirs_exist_ok=True)
           sys.path.insert(0, ".")
-          import autodiag_studio_win as A
-          app = A.App(); app.update(); app.after(1500, app.destroy); app.mainloop()
-          print("UI OK")
+          res = "UI OK"
+          try:
+              import autodiag_studio_win as A
+              app = A.App(); app.update(); app.after(1500, app.destroy); app.mainloop()
+          except Exception:
+              res = "UI FALLO\n" + traceback.format_exc()
+          try:
+              import edge_tts, asyncio
+              asyncio.run(edge_tts.Communicate("Prueba de voz.", "es-MX-JorgeNeural").save("v.mp3"))
+              res += "\nEDGE-TTS OK %d bytes" % os.path.getsize("v.mp3")
+          except Exception:
+              res += "\nEDGE-TTS FALLO\n" + traceback.format_exc()
+          open("../ui_smoke.txt", "w").write(res); print(res)
+      - uses: actions/upload-artifact@v4
+        with: { name: uismoke, path: ui_smoke.txt }
       - name: PyInstaller
         working-directory: windows
         shell: cmd
         run: |
           if not exist cloud xcopy /E /I /Y ..\cloud cloud
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name AutoDiagStudio --icon icon.ico --add-data "cloud;cloud" --add-data "icon.ico;." --collect-data customtkinter autodiag_studio_win.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name AutoDiagStudio --icon icon.ico --add-data "cloud;cloud" --add-data "icon.ico;." --collect-data customtkinter --collect-all edge_tts --collect-data certifi autodiag_studio_win.py
       - uses: actions/upload-artifact@v4
         with: { name: exe, path: windows/dist/AutoDiagStudio.exe }
 

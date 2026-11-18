@@ -17,6 +17,8 @@ python -m PyInstaller --noconfirm --clean --onefile --windowed ^
   --add-data "cloud;cloud" ^
   --add-data "icon.ico;." ^
   --collect-data customtkinter ^
+  --collect-all edge_tts ^
+  --collect-data certifi ^
   autodiag_studio_win.py || (echo [X] PyInstaller fallo & pause & exit /b 1)
 echo.
 echo [OK] Listo: dist\AutoDiagStudio.exe

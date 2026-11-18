@@ -44,6 +44,8 @@ VOICES = {"Jorge · México (masculina)": "es-MX-JorgeNeural", "Sebastián · Ve
           "Álvaro · España (masculina)": "es-ES-AlvaroNeural", "Dalia · México (femenina)": "es-MX-DaliaNeural"}
 TEMPLATES = {"Automática (la IA elige)": "auto", "Osciloscopio CKP / CMP": "osciloscopio", "PWM / Inyectores": "pwm",
              "Relés ISO / Flujo 12V-24V": "rele", "Pinout ECU": "pinout", "Libre (la IA programa la simulación)": "libre"}
+ESTILOS = {"Osciloscopio Pro (oscuro)": "osciloscopio", "Blueprint técnico (azul)": "blueprint", "Carbono (negro mate)": "carbono",
+           "Neón (morado)": "neon", "Taller claro (fondo blanco)": "claro"}
 RATES = {"Pausada": "-5%", "Normal": "+0%", "Ágil (reels)": "+8%", "Rápida": "+15%"}
 
 
@@ -469,10 +471,10 @@ def render_job(profile, job, audio_path, progress):
     return dest
 
 
-def make_job(data, formato, fps, voz, velocidad, plantilla):
+def make_job(data, formato, fps, voz, velocidad, plantilla, estilo="osciloscopio"):
     job = json.loads(json.dumps(data))
     job.update({"id": "ad" + format(int(time.time() * 1000), "x"), "formato": formato, "fps": int(fps), "voz": voz,
-                "velocidad": velocidad, "plantilla": plantilla, "modo": "libre" if job.get("codigo_libre") else "plantilla",
+                "velocidad": velocidad, "plantilla": plantilla, "estilo": estilo, "modo": "libre" if job.get("codigo_libre") else "plantilla",
                 "created": datetime.now().isoformat(timespec="seconds")})
     job["marcas_tiempo_estimadas"] = estimate_timeline(job)
     return job
@@ -683,6 +685,16 @@ class App(ctk.CTk):
             self.label(col, title).pack(fill="x")
             ctk.CTkOptionMenu(col, values=vals, variable=var, fg_color=C["panel2"], button_color=C["panel"], font=self.F).pack(fill="x")
 
+        row3 = ctk.CTkFrame(left, fg_color="transparent")
+        row3.pack(fill="x", pady=4)
+        col = ctk.CTkFrame(row3, fg_color="transparent"); col.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        self.label(col, "ESTILO VISUAL").pack(fill="x")
+        self.style_var = ctk.StringVar(value=list(ESTILOS)[0])
+        ctk.CTkOptionMenu(col, values=list(ESTILOS), variable=self.style_var, fg_color=C["panel2"], button_color=C["panel"], font=self.F).pack(fill="x")
+        col = ctk.CTkFrame(row3, fg_color="transparent"); col.pack(side="left", padx=6)
+        self.label(col, "VOZ REAL (EDGE-TTS)").pack(fill="x")
+        self.btn(col, "🔊 Probar voz", self.test_voice, "cy").pack(fill="x")
+
         arow = ctk.CTkFrame(left, fg_color="transparent")
         arow.pack(fill="x", pady=6)
         self.btn(arow, "🎙️ Audio propio (opcional)", self.pick_audio).pack(side="left")
@@ -705,11 +717,11 @@ class App(ctk.CTk):
         brow.pack(fill="x", pady=8)
         for w in (self.idea, self.titulo, self.guion, self.scenes):
             self.enable_clipboard(w)
-        self.btn(brow, "📋 Pegar texto narrado", lambda: (self.idea.delete("1.0", "end"), self.paste_into(self.idea), self.exact_var.set(True))).pack(side="left", padx=(0, 6))
+        self.btn(brow, "📋 Pegar texto narrado", lambda: (self.idea.delete("1.0", "end"), self.paste_into(self.idea), self.guion.delete("1.0", "end"), self.paste_into(self.guion), self.exact_var.set(True))).pack(side="left", padx=(0, 6))
         self.btn(brow, "📋 Copiar guion", self.copy_guion).pack(side="left", padx=(0, 6))
         brow2 = ctk.CTkFrame(left, fg_color="transparent")
         brow2.pack(fill="x", pady=(0, 8))
-        self.btn(brow2, "🤖 Copiar prompt para Claude/Gemini", self.copy_scene_prompt, "cy").pack(side="left", padx=(0, 6))
+        self.btn(brow2, "🤖 Generar prompt (desde Guion)", self.copy_scene_prompt, "cy").pack(side="left", padx=(0, 6))
         self.btn(brow2, "✅ Aplicar escenas pegadas", self.apply_scenes, "cy").pack(side="left", padx=6)
         self.btn(brow, "⬇️ Guardar HTML HyperFrames", self.save_html).pack(side="left", padx=6)
 
@@ -755,7 +767,7 @@ class App(ctk.CTk):
 
     def job_from_ui(self):
         return make_job(self.current_data(), self.fmt_var.get(), self.fps_var.get(), VOICES[self.voice_var.get()],
-                        RATES[self.rate_var.get()], TEMPLATES[self.tpl_var.get()])
+                        RATES[self.rate_var.get()], TEMPLATES[self.tpl_var.get()], ESTILOS[self.style_var.get()])
 
     def show_data(self, d):
         self.data = d
@@ -768,7 +780,7 @@ class App(ctk.CTk):
         self.scenes.delete("1.0", "end"); self.scenes.insert("1.0", json.dumps(show, ensure_ascii=False, indent=2))
 
     def generate(self):
-        idea = self.idea.get("1.0", "end").strip()
+        idea = self.idea.get("1.0", "end").strip() or self.guion.get("1.0", "end").strip()
         p = self.P()
         if not idea:
             return messagebox.showwarning(APP_NAME, "Escribe la idea o pega tu guion")
@@ -808,12 +820,33 @@ class App(ctk.CTk):
             open(p, "w", encoding="utf-8").write(build_html(job, job["marcas_tiempo_estimadas"]))
 
     def copy_scene_prompt(self):
-        texto = self.idea.get("1.0", "end").strip() or self.guion.get("1.0", "end").strip()
+        texto = self.guion.get("1.0", "end").strip() or self.idea.get("1.0", "end").strip()
         if not texto:
-            return messagebox.showwarning(APP_NAME, "Pega primero tu texto narrado en IDEA O GUION")
+            return messagebox.showwarning(APP_NAME, "Pega primero tu texto narrado en la casilla GUION DE VOZ")
         self.clipboard_clear()
         self.clipboard_append(build_prompt(texto, TEMPLATES[self.tpl_var.get()], True, self.fmt_var.get()))
         self.r_status.configure(text="🤖 Prompt copiado. Pégalo en Claude o Gemini y pega su respuesta en ESCENAS.", text_color=C["cyan"])
+
+    def test_voice(self):
+        texto = self.guion.get("1.0", "end").strip() or self.idea.get("1.0", "end").strip()
+        texto = texto[:260] if texto else "Hola, esta es la voz que tendrá tu video de diagnóstico automotriz."
+        voz, rate = VOICES[self.voice_var.get()], RATES[self.rate_var.get()]
+        self.r_status.configure(text="🔊 Generando muestra de voz…", text_color=C["yellow"])
+
+        def work():
+            try:
+                import asyncio
+                import edge_tts
+                out = os.path.join(tempfile.gettempdir(), "autodiag_prueba_voz.mp3")
+                asyncio.run(edge_tts.Communicate(texto, voz, rate=rate).save(out))
+                if os.name == "nt":
+                    os.startfile(out)
+                else:
+                    webbrowser.open("file://" + out)
+                self.ui(lambda: self.r_status.configure(text=f"🔊 Reproduciendo {self.voice_var.get()} ({self.rate_var.get()})", text_color=C["green"]))
+            except Exception as e:
+                self.ui(lambda: self.r_status.configure(text=f"❌ No se pudo generar la voz: {e}", text_color=C["red"]))
+        self.thread(work)
 
     def apply_scenes(self):
         try:
@@ -923,10 +956,10 @@ class App(ctk.CTk):
         p = dict(self.P())
         if not p.get("geminiKey"):
             return messagebox.showwarning(APP_NAME, "Configura Gemini en ⚙️ Configurar Cuentas")
-        voz, rate, fps = VOICES[self.voice_var.get()], RATES[self.rate_var.get()], self.fps_var.get()
-        self.thread(lambda: self._batch_worker(p, voz, rate, fps))
+        voz, rate, fps, est = VOICES[self.voice_var.get()], RATES[self.rate_var.get()], self.fps_var.get(), ESTILOS[self.style_var.get()]
+        self.thread(lambda: self._batch_worker(p, voz, rate, fps, est))
 
-    def _batch_worker(self, p, voz, rate, fps):
+    def _batch_worker(self, p, voz, rate, fps, est="osciloscopio"):
         path = self.excel_path
         is_csv = path.lower().endswith(".csv")
         try:
@@ -982,7 +1015,7 @@ class App(ctk.CTk):
                     idea = guion if guion else tema
                     d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), build_prompt(idea, tpl, bool(guion), fmt)), idea)
                     self.blog(f"   ✔ Guion: {len(d['guion_voz'].split())} palabras, {len(d['escenas'])} escenas")
-                    job = make_job(d, fmt, fps, voz, rate, tpl)
+                    job = make_job(d, fmt, fps, voz, rate, tpl, est)
                     setv(r, "Estado", "⏳ Renderizando…")
                     dest = render_job(p, job, None, lambda s: self.blog("   " + s) if ("Descargando" in s or "Enviando" in s) else None)
                     setv(r, "Archivo_MP4", dest)
