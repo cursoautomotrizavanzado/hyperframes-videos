@@ -92,7 +92,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
       - name: Dependencias de la prueba
-        run: cd tools && npm init -y >/dev/null && npm install --no-audit --no-fund puppeteer-core@24 >/dev/null
+        run: echo "sin dependencias extra"
       - name: Probar APK en emulador Android
         uses: reactivecircus/android-emulator-runner@v2
         with:

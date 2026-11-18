@@ -4,7 +4,6 @@
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const puppeteer = require("puppeteer-core");
 
 const OUT = process.argv[2] || "android_test";
 fs.mkdirSync(OUT, { recursive: true });
@@ -26,20 +25,33 @@ function cap(name) { const f = path.join(OUT, `${String(++shot).padStart(2, "0")
   if (!m) { cap("sin_devtools"); fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n")); process.exit(0); }
   sh(`adb forward tcp:9222 localabstract:${m[1]}`);
   await sleep(1500);
-  rec("json", sh("curl -s http://127.0.0.1:9222/json").slice(0, 600));
-  const browser = await puppeteer.connect({ browserURL: "http://127.0.0.1:9222", defaultViewport: null });
-  let page = null;
-  for (let i = 0; i < 20 && !page; i++) {
-    const t = browser.targets().find((t) => /localhost/.test(t.url()) && (t.type() === "page" || t.type() === "other" || t.type() === "webview"));
-    if (t) { try { page = await t.asPage(); } catch (e) { try { page = await t.page(); } catch (e2) { rec("asPage", e2.message); } } }
-    if (!page) { rec("targets", browser.targets().map((t) => t.type() + " " + t.url())); await sleep(1500); }
-  }
-  if (!page) throw new Error("No se pudo conectar a la página del WebView");
-  rec("url", page.url());
-  page.on("console", (msg) => rec("console." + msg.type(), msg.text()));
-  page.on("pageerror", (e) => rec("PAGEERROR", e.message));
+  const list = JSON.parse(sh("curl -s http://127.0.0.1:9222/json") || "[]");
+  const tgt = list.find((t) => /localhost/.test(t.url)) || list[0];
+  rec("url", tgt && tgt.url);
+  // Cliente CDP mínimo sobre WebSocket (Node 22)
+  const ws = new WebSocket(tgt.webSocketDebuggerUrl);
+  await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
+  let seq = 0; const pend = new Map();
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); return; }
+    if (m.method === "Runtime.consoleAPICalled") rec("console." + m.params.type, m.params.args.map((a) => a.value !== undefined ? a.value : a.description).join(" "));
+    if (m.method === "Runtime.exceptionThrown") rec("PAGEERROR", (m.params.exceptionDetails.exception || {}).description || m.params.exceptionDetails.text);
+  };
+  const send = (method, params) => new Promise((r) => { const id = ++seq; pend.set(id, r); ws.send(JSON.stringify({ id, method, params: params || {} })); });
+  await send("Runtime.enable"); await send("Page.enable");
+  const page = {
+    async evaluate(fn, arg) {
+      const expr = typeof fn === "string" ? fn : `(${fn.toString()})(${arg === undefined ? "" : JSON.stringify(arg)})`;
+      const r = await send("Runtime.evaluate", { expression: expr, awaitPromise: true, returnByValue: true, userGesture: true });
+      if (r.result && r.result.exceptionDetails) throw new Error((r.result.exceptionDetails.exception || {}).description || "eval error");
+      return r.result && r.result.result ? r.result.result.value : undefined;
+    },
+    async reload() { await send("Page.reload", {}); },
+    async waitForFunction(expr, o) { const end = Date.now() + ((o && o.timeout) || 30000); while (Date.now() < end) { try { if (await this.evaluate(expr)) return; } catch (e) {} await sleep(500); } throw new Error("timeout " + expr); },
+  };
   const t0 = Date.now();
-  await page.reload({ waitUntil: "load" });
+  await page.reload();
   rec("reload_ms", Date.now() - t0);
   await page.waitForFunction("typeof window.toast === 'function' && document.readyState === 'complete'", { timeout: 60000 }).catch((e) => rec("espera_js", e.message));
   rec("js_listo_ms", Date.now() - t0);
@@ -95,5 +107,5 @@ function cap(name) { const f = path.join(OUT, `${String(++shot).padStart(2, "0")
   await tap("#btnApplyJson", "aplicar_escenas"); await sleep(2500); cap("vista_previa");
   rec("pvInfo", await page.evaluate(() => document.getElementById("pvInfo").textContent));
   fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n"));
-  browser.disconnect();
+  ws.close();
 })().catch((e) => { rec("FATAL", String(e && e.stack || e)); fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n")); process.exit(0); });
