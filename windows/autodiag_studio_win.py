@@ -229,6 +229,23 @@ def gemini_generate(key, model, prompt):
         return json.loads(m.group(0))
 
 
+def parse_scenes_text(txt):
+    """Acepta el JSON tal como lo entrega Gemini/Claude: con ```json, texto alrededor o solo la lista de escenas."""
+    txt = (txt or "").strip()
+    if not txt:
+        return {}
+    txt = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", txt.strip())
+    starts = [i for i in (txt.find("{"), txt.find("[")) if i >= 0]
+    if not starts:
+        raise ValueError("no encontré un JSON")
+    i = min(starts)
+    end = max(txt.rfind("}"), txt.rfind("]"))
+    obj = json.loads(txt[i:end + 1])
+    if isinstance(obj, list):
+        obj = {"escenas": obj}
+    return obj
+
+
 def normalize(d, fallback=""):
     tipos = ("concepto", "osciloscopio", "pwm", "rele", "pinout", "libre")
     d["escenas"] = [s for s in d.get("escenas", []) if s and s.get("texto")]
@@ -690,6 +707,10 @@ class App(ctk.CTk):
             self.enable_clipboard(w)
         self.btn(brow, "📋 Pegar texto narrado", lambda: (self.idea.delete("1.0", "end"), self.paste_into(self.idea), self.exact_var.set(True))).pack(side="left", padx=(0, 6))
         self.btn(brow, "📋 Copiar guion", self.copy_guion).pack(side="left", padx=(0, 6))
+        brow2 = ctk.CTkFrame(left, fg_color="transparent")
+        brow2.pack(fill="x", pady=(0, 8))
+        self.btn(brow2, "🤖 Copiar prompt para Claude/Gemini", self.copy_scene_prompt, "cy").pack(side="left", padx=(0, 6))
+        self.btn(brow2, "✅ Aplicar escenas pegadas", self.apply_scenes, "cy").pack(side="left", padx=6)
         self.btn(brow, "⬇️ Guardar HTML HyperFrames", self.save_html).pack(side="left", padx=6)
 
         ctk.CTkLabel(right, text="VISTA PREVIA Y RENDER", font=self.FB, text_color=C["dim"]).pack(pady=(16, 6))
@@ -710,18 +731,19 @@ class App(ctk.CTk):
         self.audio_lbl.configure(text=os.path.basename(p) if p else "Sin audio: se usará Edge-TTS")
 
     def current_data(self):
-        if not self.data:
-            raise RuntimeError("Primero genera el guion con Gemini")
         try:
-            extra = json.loads(self.scenes.get("1.0", "end").strip() or "{}")
-            d = normalize({**self.data, **extra})
-        except json.JSONDecodeError as e:
+            extra = parse_scenes_text(self.scenes.get("1.0", "end"))
+        except Exception as e:
             raise RuntimeError(f"JSON de escenas inválido: {e}")
+        base = self.data or {}
+        if not base and not extra.get("escenas"):
+            raise RuntimeError("Genera con Gemini o pega las escenas en el cuadro ESCENAS")
+        d = normalize({**base, **extra})
         t = self.titulo.get().strip()
         if t:
             d["titulo"] = t
         g = self.guion.get("1.0", "end").strip()
-        if g and g != d["guion_voz"]:
+        if g and g != getattr(self, "shown_guion", "") and g != d["guion_voz"]:
             words, counts = g.split(), [len(s["texto"].split()) for s in d["escenas"]]
             tot, k = sum(counts) or 1, 0
             for i, s in enumerate(d["escenas"]):
@@ -737,6 +759,7 @@ class App(ctk.CTk):
 
     def show_data(self, d):
         self.data = d
+        self.shown_guion = d.get("guion_voz", "")
         self.titulo.delete(0, "end"); self.titulo.insert(0, d.get("titulo", ""))
         self.guion.delete("1.0", "end"); self.guion.insert("1.0", d.get("guion_voz", ""))
         show = {"titulo": d.get("titulo"), "subtitulo": d.get("subtitulo"), "escenas": d["escenas"]}
@@ -783,6 +806,22 @@ class App(ctk.CTk):
         p = filedialog.asksaveasfilename(defaultextension=".html", initialfile="index.html", filetypes=[("HTML", "*.html")])
         if p:
             open(p, "w", encoding="utf-8").write(build_html(job, job["marcas_tiempo_estimadas"]))
+
+    def copy_scene_prompt(self):
+        texto = self.idea.get("1.0", "end").strip() or self.guion.get("1.0", "end").strip()
+        if not texto:
+            return messagebox.showwarning(APP_NAME, "Pega primero tu texto narrado en IDEA O GUION")
+        self.clipboard_clear()
+        self.clipboard_append(build_prompt(texto, TEMPLATES[self.tpl_var.get()], True, self.fmt_var.get()))
+        self.r_status.configure(text="🤖 Prompt copiado. Pégalo en Claude o Gemini y pega su respuesta en ESCENAS.", text_color=C["cyan"])
+
+    def apply_scenes(self):
+        try:
+            d = self.current_data()
+        except Exception as e:
+            return messagebox.showwarning(APP_NAME, str(e))
+        self.show_data(d)
+        self.r_status.configure(text=f"✅ {len(d['escenas'])} escenas aplicadas. Ya puedes previsualizar o renderizar.", text_color=C["green"])
 
     def copy_guion(self):
         self.clipboard_clear()

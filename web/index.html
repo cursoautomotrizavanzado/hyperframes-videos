@@ -136,9 +136,10 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
           <button class="b" id="btnSpeak">🔊 Voz de prueba</button>
           <button class="b" id="btnHtml">⬇️ HTML HyperFrames</button>
         </div>
-        <details><summary>Escenas (JSON avanzado — se puede editar)</summary>
+        <div class="row" style="margin-top:8px"><button class="b cy" id="btnPromptCopy">🤖 Copiar prompt para Claude/Gemini</button></div>
+        <details><summary>Escenas (JSON — pega aquí la respuesta de Claude/Gemini)</summary>
           <textarea class="code" id="scenesJson" spellcheck="false"></textarea>
-          <div class="row"><button class="b cy" id="btnApplyJson">Aplicar cambios a la vista previa</button></div>
+          <div class="row"><button class="b cy" id="btnApplyJson">✅ Aplicar escenas pegadas</button></div>
         </details>
       </div>
     </div>
@@ -462,7 +463,20 @@ $("btnGen").onclick = async () => {
   catch (e) { setStatus(st, "", "❌ " + e.message); }
   btn.disabled = false;
 };
-$("btnApplyJson").onclick = () => { try { const o = JSON.parse($("scenesJson").value); DATA = normalize(Object.assign({}, DATA || {}, o)); $("guion").value = DATA.guion_voz; updatePreview(); toast("Aplicado"); } catch (e) { toast("JSON inválido: " + e.message); } };
+function parseScenes(txt) {
+  txt = String(txt || "").trim().replace(/^```[a-zA-Z]*\s*|\s*```$/g, "");
+  const i = Math.min(...[txt.indexOf("{"), txt.indexOf("[")].filter((x) => x >= 0));
+  if (!isFinite(i)) throw new Error("no encontré un JSON");
+  const o = JSON.parse(txt.slice(i, Math.max(txt.lastIndexOf("}"), txt.lastIndexOf("]")) + 1));
+  return Array.isArray(o) ? { escenas: o } : o;
+}
+$("btnPromptCopy").onclick = async () => {
+  const t = $("idea").value.trim() || $("guion").value.trim(); if (!t) return toast("Pega primero tu texto narrado arriba");
+  const pr = buildPrompt(t, $("tpl").value, true, FORMATO);
+  try { await navigator.clipboard.writeText(pr); } catch (e) { $("scenesJson").value = pr; $("scenesJson").select(); document.execCommand("copy"); $("scenesJson").value = ""; }
+  document.querySelector("details").open = true; toast("🤖 Prompt copiado: pégalo en Claude o Gemini y pega su respuesta en Escenas", 5000);
+};
+$("btnApplyJson").onclick = () => { try { const o = parseScenes($("scenesJson").value); DATA = normalize(Object.assign({}, DATA || {}, o)); $("guion").value = DATA.guion_voz; updatePreview(); toast("Aplicado"); } catch (e) { toast("JSON inválido: " + e.message); } };
 $("guion").addEventListener("change", updatePreview); $("titulo").addEventListener("change", updatePreview);
 $("btnCopyGuion").onclick = async () => { const t = $("guion").value.trim(); try { await navigator.clipboard.writeText(t); toast("Guion copiado"); } catch (e) { $("guion").select(); document.execCommand("copy"); toast("Guion copiado"); } };
 $("btnSpeak").onclick = () => {
