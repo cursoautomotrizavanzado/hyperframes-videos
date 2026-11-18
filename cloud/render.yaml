@@ -1,0 +1,11 @@
+# Blueprint para el botón "Deploy to Render"
+services:
+  - type: web
+    name: autodiag-render
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: APP_KEY
+        generateValue: true

@@ -1,0 +1,18 @@
+{
+  "name": "autodiag-hyperframes-engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Motor de render de AutoDiag Video Studio: HyperFrames + Edge-TTS + FFmpeg",
+  "license": "Apache-2.0",
+  "scripts": {
+    "render": "bash render/pipeline.sh",
+    "start": "node server/server.js"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "hyperframes": "^0.9.65",
+    "gsap": "^3.12.5",
+    "puppeteer-core": "^24.10.0",
+    "express": "^4.21.2"
+  }
+}

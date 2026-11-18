@@ -1,0 +1,9 @@
+{"id":"demo-ckp","formato":"9:16","fps":60,"voz":"es-MX-JorgeNeural","velocidad":"+8%",
+"titulo":"CKP inductivo: el hueco que la ECU necesita","subtitulo":"Cómo leerlo en el osciloscopio",
+"escenas":[
+{"tipo":"concepto","titulo":"Gira pero no arranca","etiqueta":"SÍNTOMA","texto":"¿El motor gira pero no arranca? Antes de cambiar piezas, mira la señal del sensor CKP.","datos":{"puntos":["Gira","No arranca","Revisa CKP"]},"badges":[{"etiqueta":"Síntoma","valor":"Sin arranque","tipo":"falla"}]},
+{"tipo":"osciloscopio","titulo":"Señal alterna","etiqueta":"CKP INDUCTIVO","texto":"El sensor CKP inductivo genera una señal alterna: cada diente de la rueda fónica produce una onda completa.","datos":{"senal":"ckp_inductivo","rpm":250,"vpp":3},"badges":[{"etiqueta":"Vpp arranque","valor":"3 V","tipo":"senal"},{"etiqueta":"RPM","valor":"250","tipo":"rpm"}]},
+{"tipo":"osciloscopio","titulo":"Rueda 60-2","etiqueta":"REFERENCIA","texto":"En una rueda sesenta menos dos, el hueco de los dientes faltantes aparece como una onda más larga y amplia: es la referencia que usa la ECU para ubicar el cigüeñal.","datos":{"senal":"ckp_inductivo","rpm":250,"vpp":3,"resaltar":"diente_faltante"},"badges":[{"etiqueta":"Rueda","valor":"60-2","tipo":"senal"}]},
+{"tipo":"osciloscopio","titulo":"Señal con ruido","etiqueta":"FALLA","texto":"Si la señal sale plana o con ruido, mide la resistencia del sensor, normalmente entre doscientos y mil quinientos ohmios según el fabricante, y revisa el blindaje del cable.","datos":{"senal":"ckp_inductivo","rpm":250,"vpp":3,"falla":"ruido"},"badges":[{"etiqueta":"Resistencia","valor":"200-1500 Ω","tipo":"resistencia"},{"etiqueta":"Falla","valor":"Ruido","tipo":"falla"}]},
+{"tipo":"concepto","titulo":"Diagnostica con datos","etiqueta":"CIERRE","texto":"Mide en arranque, compara con un motor sano y diagnostica con datos, no con suposiciones.","datos":{"puntos":["Mide en arranque","Compara","Decide con datos"]},"badges":[]}
+]}

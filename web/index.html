@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080D16">
+<title>AutoDiag Video Studio</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#080D16;--p:#172132;--p2:#0F1828;--b:#2A3B54;--o:#F76015;--c:#00E5FF;--r:#FF3B30;--g:#34C759;--y:#FFD60A;--t:#E8EEF7;--d:#7F92AE;
+  --mono:"JetBrains Mono",Consolas,"DejaVu Sans Mono",monospace;--sans:Inter,"Segoe UI",Roboto,Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t);font:15px/1.45 var(--sans)}
+body{background-image:linear-gradient(#0D1626 1px,transparent 1px),linear-gradient(90deg,#0D1626 1px,transparent 1px);background-size:20px 20px;min-height:100vh;padding-bottom:40px}
+header{position:sticky;top:0;z-index:5;background:rgba(8,13,22,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--b);padding:10px 14px calc(10px) ;padding-top:max(10px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand h1{font:800 17px var(--sans);margin:0;letter-spacing:.3px}
+.brand h1 b{color:var(--o)}
+.leds{display:flex;gap:10px;margin-left:auto;font:600 12px var(--mono);color:var(--d)}
+.led{display:flex;align-items:center;gap:5px}
+.led i{width:10px;height:10px;border-radius:50%;background:var(--r);box-shadow:0 0 8px var(--r)}
+.led.on i{background:var(--g);box-shadow:0 0 8px var(--g)}
+.tabs{display:flex;gap:6px;margin-top:10px}
+.tabs button{flex:1;background:var(--p2);color:var(--d);border:1px solid var(--b);border-radius:10px;padding:10px;font:700 14px var(--sans)}
+.tabs button.act{background:var(--p);color:var(--t);border-color:var(--o);box-shadow:inset 0 -3px 0 var(--o)}
+main{max-width:1180px;margin:0 auto;padding:14px}
+.view{display:none}.view.act{display:block}
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:960px){.grid.two{grid-template-columns:1fr 420px}}
+.card{background:var(--p);border:1px solid var(--b);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.card h2{font:800 14px var(--mono);letter-spacing:.8px;text-transform:uppercase;margin:0 0 12px;color:var(--d);display:flex;align-items:center;gap:8px}
+.card h2:after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--b),transparent)}
+label{display:block;font:700 12px var(--mono);color:var(--d);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+input[type=text],input[type=password],input[type=url],select,textarea{width:100%;background:var(--p2);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:11px 12px;font:15px var(--sans);outline:none}
+textarea{min-height:90px;resize:vertical}
+textarea.code{font:12px/1.4 var(--mono);min-height:180px}
+input:focus,select:focus,textarea:focus{border-color:var(--c)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 auto}
+button.b{background:var(--p2);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:11px 14px;font:700 14px var(--sans);cursor:pointer;white-space:nowrap}
+button.b:hover{border-color:var(--c)}
+button.b.pri{background:var(--o);border-color:var(--o);color:#fff}
+button.b.cy{background:transparent;border-color:var(--c);color:var(--c)}
+button.b.big{width:100%;padding:15px;font-size:16px}
+button.b:disabled{opacity:.5;cursor:wait}
+.seg{display:flex;border:1px solid var(--b);border-radius:10px;overflow:hidden}
+.seg button{flex:1;background:var(--p2);color:var(--d);border:0;padding:10px;font:700 14px var(--mono)}
+.seg button.act{background:var(--c);color:#04121a}
+.status{font:600 13px var(--mono);padding:8px 10px;border-radius:8px;background:var(--p2);border:1px solid var(--b);margin-top:8px;display:flex;gap:8px;align-items:center}
+.status i{width:10px;height:10px;border-radius:50%;background:var(--r);flex:none}
+.status.ok i{background:var(--g);box-shadow:0 0 8px var(--g)}
+.status.wait i{background:var(--y);box-shadow:0 0 8px var(--y)}
+.step{display:flex;gap:12px;align-items:flex-start;margin-bottom:6px}
+.step .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--o);color:#fff;font:800 15px var(--mono);display:grid;place-items:center}
+.hint{color:var(--d);font-size:13px;margin:6px 0 0}
+.log{background:#050A12;border:1px solid var(--b);border-radius:10px;padding:10px;font:12px/1.5 var(--mono);color:#9fb3cc;max-height:220px;overflow:auto;white-space:pre-wrap;margin-top:10px;display:none}
+.pv{position:relative;background:#000;border:1px solid var(--b);border-radius:14px;overflow:hidden}
+.pv iframe{display:block;width:100%;border:0;background:#000}
+.pv.v916 iframe{aspect-ratio:9/16;max-height:72vh}
+.pv.v169 iframe{aspect-ratio:16/9}
+.bar{height:8px;background:var(--p2);border-radius:6px;overflow:hidden;border:1px solid var(--b);margin-top:10px}
+.bar div{height:100%;width:0;background:linear-gradient(90deg,var(--o),var(--y));transition:width .5s}
+.hist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.hist div{display:flex;justify-content:space-between;gap:8px;font:12px var(--mono);background:var(--p2);border:1px solid var(--b);border-radius:8px;padding:8px}
+details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:10px 0}
+.pill{display:inline-block;font:700 11px var(--mono);padding:3px 8px;border-radius:20px;background:var(--p2);border:1px solid var(--b);color:var(--d)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--p);border:1px solid var(--c);color:var(--t);padding:10px 16px;border-radius:12px;font:600 14px var(--sans);z-index:20;display:none;max-width:92vw}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>⚡ AutoDiag <b>Video Studio</b></h1>
+    <select id="profileSel" style="width:auto;padding:6px 10px;font-size:13px"></select>
+    <div class="leds"><span class="led" id="ledG"><i></i>GEMINI</span><span class="led" id="ledR"><i></i>NUBE</span></div>
+  </div>
+  <div class="tabs">
+    <button data-tab="studio" class="act">🎬 Estudio de Creación</button>
+    <button data-tab="accounts">⚙️ Cuentas y Auto-Instalador</button>
+  </div>
+</header>
+
+<main>
+<!-- ================= ESTUDIO ================= -->
+<section class="view act" id="v-studio">
+  <div class="grid two">
+    <div>
+      <div class="card">
+        <h2>1 · Idea o guion</h2>
+        <textarea id="idea" placeholder="Ej: Explicar cómo probar un sensor CKP inductivo y cómo se ve el diente faltante en el osciloscopio"></textarea>
+        <div class="row" style="margin-top:8px">
+          <label style="margin:0;display:flex;gap:8px;align-items:center;text-transform:none;font:600 13px var(--sans);color:var(--t)"><input type="checkbox" id="exact"> Es mi guion exacto (no reescribir)</label>
+        </div>
+        <div class="row">
+          <div><label>Formato</label><div class="seg" id="fmtSeg"><button data-v="9:16" class="act">9:16 Reel</button><button data-v="16:9">16:9 Curso</button></div></div>
+          <div><label>Plantilla</label>
+            <select id="tpl">
+              <option value="auto">Automática (la IA elige)</option>
+              <option value="osciloscopio">Osciloscopio CKP / CMP</option>
+              <option value="pwm">PWM / Inyectores</option>
+              <option value="rele">Relés ISO / Flujo 12V-24V</option>
+              <option value="pinout">Pinout ECU</option>
+              <option value="libre">Libre (la IA programa la simulación)</option>
+            </select></div>
+        </div>
+        <div class="row">
+          <div><label>Voz (Edge-TTS)</label>
+            <select id="voice">
+              <option value="es-MX-JorgeNeural">Jorge · México (masculina)</option>
+              <option value="es-VE-SebastianNeural">Sebastián · Venezuela (masculina)</option>
+              <option value="es-CO-GonzaloNeural">Gonzalo · Colombia (masculina)</option>
+              <option value="es-US-AlonsoNeural">Alonso · EE.UU. (masculina)</option>
+              <option value="es-ES-AlvaroNeural">Álvaro · España (masculina)</option>
+              <option value="es-MX-DaliaNeural">Dalia · México (femenina)</option>
+            </select></div>
+          <div><label>Velocidad</label>
+            <select id="rate"><option value="-5%">Pausada</option><option value="+0%">Normal</option><option value="+8%" selected>Ágil (reels)</option><option value="+15%">Rápida</option></select></div>
+          <div><label>FPS</label><select id="fps"><option value="60" selected>60</option><option value="30">30 (más rápido)</option></select></div>
+        </div>
+        <label>Audio propio (opcional, MP3/M4A/WAV)</label>
+        <input type="file" id="audioFile" accept="audio/*">
+        <p class="hint">Si subes tu narración, la nube la transcribe con Whisper y sincroniza la animación palabra por palabra. Sin audio, se genera la voz con Edge-TTS.</p>
+        <div class="row" style="margin-top:12px">
+          <button class="b pri big" id="btnGen">✨ Generar guion + animación con Gemini</button>
+        </div>
+        <div class="status wait" id="genStatus" style="display:none"><i></i><span></span></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>2 · Guion de voz</h2>
+        <input type="text" id="titulo" placeholder="Título de portada">
+        <textarea id="guion" style="margin-top:8px;min-height:140px" placeholder="Aquí aparecerá el guion listo para locución"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="b" id="btnCopyGuion">📋 Copiar guion limpio</button>
+          <button class="b" id="btnSpeak">🔊 Voz de prueba</button>
+          <button class="b" id="btnHtml">⬇️ HTML HyperFrames</button>
+        </div>
+        <details><summary>Escenas (JSON avanzado — se puede editar)</summary>
+          <textarea class="code" id="scenesJson" spellcheck="false"></textarea>
+          <div class="row"><button class="b cy" id="btnApplyJson">Aplicar cambios a la vista previa</button></div>
+        </details>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>3 · Vista previa</h2>
+        <div class="pv v916" id="pvBox"><iframe id="pv" title="Vista previa"></iframe></div>
+        <div class="row" style="margin-top:8px"><span class="pill" id="pvTime">0.0 / 0.0 s</span><span class="pill" id="pvInfo">Duración estimada</span></div>
+        <p class="hint">Toca la vista previa para pausar. Los tiempos son estimados; en el render se sincronizan con la voz real.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>4 · Render en la nube</h2>
+        <button class="b pri big" id="btnRender">🎬 Renderizar y Descargar MP4</button>
+        <div class="bar"><div id="prog"></div></div>
+        <div class="status" id="rStatus"><i></i><span>Listo para renderizar</span></div>
+        <div class="log" id="rLog"></div>
+        <div class="hist" id="hist"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CUENTAS ================= -->
+<section class="view" id="v-accounts">
+  <div class="grid">
+    <div class="card">
+      <h2>Perfiles</h2>
+      <p class="hint">Cada persona usa sus propias cuentas. Las llaves se guardan cifradas solo en este dispositivo.</p>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="profName" placeholder="Nombre del perfil (ej. Perfil Pedro)">
+        <button class="b" id="btnProfNew">➕ Nuevo</button>
+        <button class="b" id="btnProfRen">✏️ Renombrar</button>
+        <button class="b" id="btnProfDel">🗑️ Borrar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="n">1</div><div style="flex:1"><h2 style="margin:4px 0 0">Cerebro IA · Google Gemini</h2></div></div>
+      <label>GEMINI_API_KEY</label>
+      <input type="password" id="gKey" placeholder="AIza..." autocomplete="off">
+      <div class="row" style="margin-top:8px">
+        <button class="b cy" id="btnGKeyGet">🔑 Obtener mi API Key Gratis</button>
+        <button class="b" id="btnGTest">⚡ Probar Conexión</button>
+      </div>
+      <label>Modelo</label>
+      <select id="gModel"><option value="gemini-2.5-flash">gemini-2.5-flash (rápido)</option><option value="gemini-2.5-pro">gemini-2.5-pro (más preciso)</option></select>
+      <div class="status" id="gStatus"><i></i><span>🔴 Pendiente</span></div>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="n">2</div><div style="flex:1"><h2 style="margin:4px 0 0">Motor de renderizado · GitHub</h2></div></div>
+      <label>GITHUB_PERSONAL_TOKEN</label>
+      <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off">
+      <div class="row" style="margin-top:8px">
+        <button class="b cy" id="btnGhGet">🔑 Crear Token en 1 Clic</button>
+        <button class="b" id="btnGhTest">⚡ Probar Token</button>
+      </div>
+      <p class="hint">En GitHub: baja hasta el final y pulsa <b>Generate token</b>. Copia el token y pégalo aquí.</p>
+      <div class="row">
+        <div><label>Nombre del repositorio</label><input type="text" id="ghRepo" value="autodiag-hyperframes-engine"></div>
+        <div><label>Visibilidad</label><select id="ghPrivate"><option value="1">Privado (2.000 min/mes gratis)</option><option value="0">Público (minutos ilimitados)</option></select></div>
+      </div>
+      <button class="b pri big" id="btnProvision" style="margin-top:14px">🚀 Auto-Configurar mi Nube</button>
+      <div class="status" id="ghStatus"><i></i><span>🔴 Pendiente</span></div>
+      <div class="log" id="provLog"></div>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="n">3</div><div style="flex:1"><h2 style="margin:4px 0 0">Motor alternativo (opcional)</h2></div></div>
+      <label>¿Dónde renderizar?</label>
+      <select id="backend">
+        <option value="github">GitHub Actions directo (recomendado, gratis)</option>
+        <option value="proxy">Cloudflare Worker / servidor Render (URL + App Key)</option>
+      </select>
+      <div id="proxyBox" style="display:none">
+        <label>URL del Worker o servidor</label><input type="url" id="pxUrl" placeholder="https://autodiag-proxy.TU-CUENTA.workers.dev">
+        <label>App Key</label><input type="password" id="pxKey" placeholder="clave secreta">
+        <div class="row" style="margin-top:8px"><button class="b" id="btnPxTest">⚡ Probar servidor</button></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="b cy" id="btnRenderDeploy">☁️ Desplegar servidor en Render</button>
+        <button class="b" id="btnCopyWorker">📋 Copiar worker.js</button>
+      </div>
+      <p class="hint">Render: requiere el repositorio en <b>Público</b>; al terminar copia la URL y la variable APP_KEY aquí. Cloudflare: el despliegue automático del Worker se hace desde la app de Windows (Cloudflare no permite hacerlo desde el navegador); también puedes pegar worker.js en dash.cloudflare.com → Workers.</p>
+      <div class="status" id="pxStatus"><i></i><span>🔴 Sin configurar (opcional)</span></div>
+    </div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="cloud_bundle.js"></script>
+<script>
+"use strict";
+/* ======================= Utilidades ======================= */
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function toast(msg, ms) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(t._h); t._h = setTimeout(() => (t.style.display = "none"), ms || 3200); }
+function setStatus(el, state, txt) { el.className = "status " + (state || ""); el.querySelector("span").textContent = txt; }
+function logTo(el, s) { el.style.display = "block"; el.textContent += s + "\n"; el.scrollTop = el.scrollHeight; }
+function b64utf8(str) { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+function fileToB64(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); }); }
+function blobToB64(blob) { return fileToB64(blob); }
+function openExternal(url) {
+  try { if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Browser) return Capacitor.Plugins.Browser.open({ url }); } catch (e) {}
+  try { if (window.app && app.OpenUrl) return app.OpenUrl(url); } catch (e) {}
+  window.open(url, "_blank", "noopener");
+}
+async function saveFile(name, blob) {
+  // 1) APK (Capacitor): guarda en Documentos/AutoDiag y ofrece compartir
+  const Cap = window.Capacitor && Capacitor.Plugins;
+  if (Cap && Cap.Filesystem) {
+    const data = await blobToB64(blob);
+    let uri;
+    try { const r = await Cap.Filesystem.writeFile({ path: "AutoDiag/" + name, data, directory: "DOCUMENTS", recursive: true }); uri = r.uri; toast("Guardado en Documentos/AutoDiag/" + name, 5000); }
+    catch (e) { const r = await Cap.Filesystem.writeFile({ path: name, data, directory: "CACHE" }); uri = r.uri; }
+    try { if (Cap.Share) await Cap.Share.share({ title: name, url: uri, dialogTitle: "Guardar o compartir video" }); } catch (e) {}
+    return;
+  }
+  // 2) DroidScript
+  if (window.app && app.CreateFile) {
+    try { const data = await blobToB64(blob); const dir = "/sdcard/Download/AutoDiag"; app.MakeFolder && app.MakeFolder(dir);
+      const f = app.CreateFile(dir + "/" + name, "rw"); f.WriteData(data, "base64"); f.Close(); toast("Guardado en Descargas/AutoDiag/" + name, 5000); return; } catch (e) { console.warn(e); }
+  }
+  // 3) Navegador / PWA
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+
+/* ======================= Bóveda cifrada (AES-GCM, llave no exportable en IndexedDB) ======================= */
+const Vault = {
+  async key() {
+    if (!(window.crypto && crypto.subtle && window.indexedDB)) return null;
+    const db = await new Promise((res, rej) => { const r = indexedDB.open("autodiag-vault", 1); r.onupgradeneeded = () => r.result.createObjectStore("k"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const get = () => new Promise((res) => { const q = db.transaction("k").objectStore("k").get("main"); q.onsuccess = () => res(q.result); q.onerror = () => res(null); });
+    let k = await get();
+    if (!k) { k = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+      await new Promise((res) => { const tx = db.transaction("k", "readwrite"); tx.objectStore("k").put(k, "main"); tx.oncomplete = res; tx.onerror = res; }); }
+    return k;
+  },
+  async save(obj) {
+    const txt = JSON.stringify(obj);
+    try { const k = await this.key(); if (k) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, new TextEncoder().encode(txt)));
+        localStorage.setItem("autodiag_profiles_enc", JSON.stringify({ iv: btoa(String.fromCharCode(...iv)), ct: btoa(Array.from(ct, (c) => String.fromCharCode(c)).join("")) })); localStorage.removeItem("autodiag_profiles"); return; } } catch (e) { console.warn("cifrado no disponible", e); }
+    localStorage.setItem("autodiag_profiles", txt);
+  },
+  async load() {
+    try { const enc = localStorage.getItem("autodiag_profiles_enc"); if (enc) { const k = await this.key(); const o = JSON.parse(enc);
+        const iv = Uint8Array.from(atob(o.iv), (c) => c.charCodeAt(0)), ct = Uint8Array.from(atob(o.ct), (c) => c.charCodeAt(0));
+        return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv }, k, ct))); } } catch (e) { console.warn("no se pudo descifrar", e); }
+    try { return JSON.parse(localStorage.getItem("autodiag_profiles") || "null"); } catch (e) { return null; }
+  },
+};
+
+/* ======================= Perfiles ======================= */
+let STORE = { active: "Perfil principal", profiles: { "Perfil principal": {} }, history: [] };
+const P = () => STORE.profiles[STORE.active] || (STORE.profiles[STORE.active] = {});
+async function persist() { await Vault.save(STORE); }
+function renderProfiles() {
+  const sel = $("profileSel"); sel.innerHTML = "";
+  Object.keys(STORE.profiles).forEach((n) => { const o = document.createElement("option"); o.value = o.textContent = n; if (n === STORE.active) o.selected = true; sel.appendChild(o); });
+  const p = P();
+  $("gKey").value = p.geminiKey || ""; $("ghToken").value = p.githubToken || ""; $("ghRepo").value = p.repo || "autodiag-hyperframes-engine";
+  $("ghPrivate").value = p.private === false ? "0" : "1"; $("backend").value = p.backend || "github"; $("pxUrl").value = p.proxyUrl || ""; $("pxKey").value = p.proxyKey || "";
+  if (p.models && p.models.length) fillModels(p.models); if (p.model) $("gModel").value = p.model;
+  $("proxyBox").style.display = $("backend").value === "proxy" ? "block" : "none";
+  refreshLeds(); renderHistory();
+}
+function refreshLeds() {
+  const p = P(), g = !!p.geminiOk, r = p.backend === "proxy" ? !!p.proxyOk : !!p.cloudReady;
+  $("ledG").classList.toggle("on", g); $("ledR").classList.toggle("on", r);
+  setStatus($("gStatus"), g ? "ok" : "", g ? "🟢 Conectado" : "🔴 Pendiente");
+  setStatus($("ghStatus"), p.cloudReady ? "ok" : "", p.cloudReady ? `🟢 Conectado a ${p.owner}/${p.repo}` : "🔴 Pendiente");
+  setStatus($("pxStatus"), p.proxyOk ? "ok" : "", p.proxyOk ? "🟢 Servidor conectado" : "🔴 Sin configurar (opcional)");
+}
+["gKey", "ghToken", "ghRepo", "ghPrivate", "backend", "pxUrl", "pxKey", "gModel"].forEach((id) => $(id).addEventListener("change", async () => {
+  const p = P(); p.geminiKey = $("gKey").value.trim(); p.githubToken = $("ghToken").value.trim(); p.repo = $("ghRepo").value.trim() || "autodiag-hyperframes-engine";
+  p.private = $("ghPrivate").value === "1"; p.backend = $("backend").value; p.proxyUrl = $("pxUrl").value.trim().replace(/\/+$/, ""); p.proxyKey = $("pxKey").value.trim(); p.model = $("gModel").value;
+  if (id === "gKey") p.geminiOk = false; if (id === "ghToken" || id === "ghRepo") p.cloudReady = false;
+  $("proxyBox").style.display = p.backend === "proxy" ? "block" : "none"; await persist(); refreshLeds();
+}));
+$("profileSel").onchange = async () => { STORE.active = $("profileSel").value; await persist(); renderProfiles(); };
+$("btnProfNew").onclick = async () => { const n = $("profName").value.trim(); if (!n) return toast("Escribe un nombre"); if (STORE.profiles[n]) return toast("Ya existe"); STORE.profiles[n] = {}; STORE.active = n; $("profName").value = ""; await persist(); renderProfiles(); toast("Perfil creado: " + n); };
+$("btnProfRen").onclick = async () => { const n = $("profName").value.trim(); if (!n || STORE.profiles[n]) return toast("Nombre vacío o repetido"); STORE.profiles[n] = P(); delete STORE.profiles[STORE.active]; STORE.active = n; $("profName").value = ""; await persist(); renderProfiles(); };
+$("btnProfDel").onclick = async () => { if (Object.keys(STORE.profiles).length < 2) return toast("Debe quedar al menos un perfil"); if (!confirm("¿Borrar el perfil " + STORE.active + "?")) return; delete STORE.profiles[STORE.active]; STORE.active = Object.keys(STORE.profiles)[0]; await persist(); renderProfiles(); };
+
+/* ======================= Pestañas y formato ======================= */
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("act", x === b));
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("act", v.id === "v-" + b.dataset.tab));
+});
+let FORMATO = "9:16";
+document.querySelectorAll("#fmtSeg button").forEach((b) => b.onclick = () => {
+  FORMATO = b.dataset.v; document.querySelectorAll("#fmtSeg button").forEach((x) => x.classList.toggle("act", x === b));
+  $("pvBox").className = "pv " + (FORMATO === "16:9" ? "v169" : "v916"); if (DATA) { DATA.formato = FORMATO; updatePreview(); }
+});
+
+/* ======================= Gemini ======================= */
+$("btnGKeyGet").onclick = () => openExternal("https://aistudio.google.com/app/apikey");
+function fillModels(list) {
+  const sel = $("gModel"), cur = sel.value; sel.innerHTML = "";
+  list.forEach((m) => { const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); });
+  sel.value = list.includes(cur) ? cur : (list.find((m) => m === "gemini-2.5-flash") || list.find((m) => /flash/.test(m)) || list[0]);
+}
+$("btnGTest").onclick = async () => {
+  const key = $("gKey").value.trim(); if (!key) return toast("Pega tu API Key");
+  setStatus($("gStatus"), "wait", "Probando…");
+  try {
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=" + encodeURIComponent(key));
+    const d = await r.json(); if (!r.ok) throw new Error((d.error && d.error.message) || r.status);
+    const models = (d.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent") && /gemini/.test(m.name)).map((m) => m.name.replace("models/", ""))
+      .filter((m) => !/embedding|tts|image|audio|live|vision/.test(m)).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    const p = P(); p.geminiKey = key; p.geminiOk = true; p.models = models; fillModels(models); p.model = $("gModel").value; await persist(); refreshLeds(); toast("✅ Gemini conectado");
+  } catch (e) { const p = P(); p.geminiOk = false; await persist(); refreshLeds(); setStatus($("gStatus"), "", "🔴 Llave inválida: " + e.message); }
+};
+
+const TPL_HELP = {
+  osciloscopio: 'datos: {"senal":"ckp_inductivo|ckp_hall|cmp_hall|ckp_cmp","rpm":800,"dientes":60,"faltantes":2,"vpp":4,"resaltar":"diente_faltante|null","falla":"null|ruido|diente_danado|sin_senal"}',
+  pwm: 'datos: {"senal":"pwm|inyector","voltaje":13.8,"frecuencia_hz":100,"duty":40,"ancho_ms":3,"pico_inductivo_v":62,"corriente_a":1,"falla":"null|sin_pico|circuito_abierto"}',
+  rele: 'datos: {"voltaje":12|24,"activacion_en":1.2,"carga":"bomba|ventilador|bocina","control":"ECU (masa al 85)","falla":"null|bobina_abierta|contacto_quemado"}',
+  pinout: 'datos: {"conector":"ECU A","filas":3,"columnas":8,"pines":[{"n":1,"etiqueta":"+12V IGN","tipo":"alimentacion|masa|senal|can|control|pwm","valor":"12.6 V"}],"resaltar":[1]}',
+  concepto: 'datos: {"puntos":["etiqueta corta 1","etiqueta corta 2","etiqueta corta 3"]}  (máx 5, 2-5 palabras cada una)',
+  libre: 'datos: {} y además el campo raíz "codigo_libre" (ver abajo)',
+};
+function buildPrompt(idea, tpl, exact, formato) {
+  const tipos = tpl === "auto" ? "Elige para cada escena el tipo que mejor ilustre literalmente lo narrado: concepto, osciloscopio, pwm, rele, pinout." :
+    tpl === "libre" ? 'Usa el tipo "libre" en las escenas técnicas (y "concepto" donde convenga).' :
+    `La plantilla principal es "${tpl}": úsala en la mayoría de escenas técnicas; puedes usar "concepto" en introducción y cierre.`;
+  return `Eres un instructor experto en diagnóstico automotriz (electrónica, osciloscopio, sensores, actuadores, redes CAN) y guionista de videos cortos técnicos en español latinoamericano.
+Tarea: ${exact ? "toma EXACTAMENTE este guion (no cambies ni una palabra) y divídelo en escenas" : "escribe un guion de voz de 60 a 90 segundos (150-220 palabras), técnico, preciso y natural para locución, con un gancho en la primera frase y un cierre útil"} sobre:
+"""${idea}"""
+Formato del video: ${formato === "16:9" ? "16:9 (curso en PC)" : "9:16 (TikTok/Reels)"}.
+${tipos}
+Reglas:
+- Precisión técnica primero: valores reales y típicos (voltajes, Vpp, resistencias, frecuencias). Nada inventado ni dudoso.
+- El texto en pantalla son etiquetas cortas; la explicación la lleva la voz.
+- Los campos "texto" de las escenas, concatenados con un espacio, deben ser idénticos a "guion_voz". 4 a 8 escenas.
+- La primera escena es el gancho. Números escritos como se pronuncian en "texto" (ej. "cinco voltios"), pero en badges usa cifras ("5 V").
+- badges: 1 a 4 por escena, con magnitudes, pines, voltajes o fallas mencionadas. tipo ∈ voltaje|masa|senal|corriente|control|pwm|can|falla|temperatura|resistencia|tiempo|rpm.
+Esquemas de "datos" por tipo:
+- osciloscopio → ${TPL_HELP.osciloscopio}
+- pwm → ${TPL_HELP.pwm}
+- rele → ${TPL_HELP.rele}
+- pinout → ${TPL_HELP.pinout}
+- concepto → ${TPL_HELP.concepto}
+${tpl === "libre" ? `- libre → "codigo_libre": código JavaScript que define window.renderLibre = function(ctx, info){...}. info = {t, local, dur, scene, rect:{x,y,w,h}, C, W, H, MONO, SANS}. Dibuja con Canvas 2D DENTRO de rect, en función SOLO del tiempo (determinista: nada de Math.random, Date ni requestAnimationFrame). Usa info.scene.datos y info.local (segundos dentro de la escena). Colores: C.orange #F76015, C.cyan #00E5FF, C.red #FF3B30 (+12V), C.green #34C759 (masa), C.yellow #FFD60A (control/PWM). Simulación física/eléctrica real y animada (corriente fluyendo, agujas, señales), no diapositivas.` : ""}
+Responde SOLO JSON válido con esta forma:
+{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal"}],"datos":{}}]${tpl === "libre" ? ',"codigo_libre":"..."' : ""}}`;
+}
+async function callGemini(prompt) {
+  const p = P(); const key = p.geminiKey || $("gKey").value.trim(); if (!key) throw new Error("Configura tu GEMINI_API_KEY en ⚙️ Cuentas");
+  const model = p.model || $("gModel").value || "gemini-2.5-flash";
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.6, maxOutputTokens: 16384 } }) });
+  const d = await r.json(); if (!r.ok) throw new Error((d.error && d.error.message) || ("HTTP " + r.status));
+  const txt = (((d.candidates || [])[0] || {}).content || {}).parts?.map((x) => x.text || "").join("") || "";
+  const m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error("Gemini no devolvió JSON");
+  return JSON.parse(m[0]);
+}
+function normalize(d, exactText) {
+  d.escenas = (d.escenas || []).filter((s) => s && s.texto);
+  if (!d.escenas.length) d.escenas = [{ tipo: "concepto", titulo: d.titulo || "", texto: d.guion_voz || exactText || "" }];
+  d.escenas.forEach((s) => { s.tipo = ["concepto", "osciloscopio", "pwm", "rele", "pinout", "libre"].includes(s.tipo) ? s.tipo : "concepto"; s.datos = s.datos || {}; s.badges = (s.badges || []).slice(0, 4); });
+  d.guion_voz = d.escenas.map((s) => s.texto.trim()).join(" ");
+  return d;
+}
+
+/* ======================= Estado + vista previa ======================= */
+let DATA = null;
+const ENGINE = (window.CLOUD_FILES || {})["render/engine.html"] || "";
+function safeJson(o) { return JSON.stringify(o).replace(/</g, "\\u003c"); }
+function buildHtml(job, timeline, preview) {
+  const wide = job.formato === "16:9", W = wide ? 1920 : 1080, H = wide ? 1080 : 1920;
+  const dur = timeline && timeline.duration ? Number(timeline.duration).toFixed(3) : "10";
+  return ENGINE.split("__W__").join(W).split("__H__").join(H).split("__DURATION__").join(dur).split("__FPS__").join(job.fps || 60)
+    .replace("/*__JOB__*/null", safeJson(job)).replace("/*__TIMELINE__*/null", timeline ? safeJson(timeline) : "null")
+    .replace("/*__PREVIEW__*/false", preview ? "true" : "false").replace(preview ? '<script src="gsap.min.js"></script>' : "\u0000", "").replace("/*__LIBRE__*/", String(job.codigo_libre || "").replace(/<\/script/gi, "<\\/script"));
+}
+function estimateTimeline(job) { // marcas de tiempo estimadas (formato Whisper word-level)
+  const segs = job.escenas.map((s) => s.texto || ""), toks = [];
+  segs.forEach((s, i) => s.split(/\s+/).filter(Boolean).forEach((w) => toks.push({ w, i })));
+  const rate = { "-5%": 2.3, "+0%": 2.45, "+8%": 2.65, "+15%": 2.85 }[job.velocidad] || 2.55;
+  const dur = Math.max(4, toks.length / rate + 1.1), weights = toks.map((t) => t.w.replace(/[^\wÁÉÍÓÚÜÑáéíóúüñ]/g, "").length + 2 + (/[.,;:!?…]$/.test(t.w) ? 3.5 : 0));
+  const sum = weights.reduce((a, b) => a + b, 0) || 1; let t = 0.35; const usable = dur - 0.85, words = [];
+  toks.forEach((tk, k) => { const d = usable * weights[k] / sum; words.push({ word: tk.w, start: +t.toFixed(3), end: +(t + d * 0.88).toFixed(3), seg: tk.i }); t += d; });
+  return { duration: +dur.toFixed(3), language: "es", words, source: "estimado" };
+}
+function collectJob() {
+  if (!DATA) return null;
+  const job = JSON.parse(JSON.stringify(DATA));
+  job.formato = FORMATO; job.fps = +$("fps").value; job.voz = $("voice").value; job.velocidad = $("rate").value;
+  job.titulo = $("titulo").value.trim() || job.titulo; job.plantilla = $("tpl").value; job.modo = job.codigo_libre ? "libre" : "plantilla";
+  const g = $("guion").value.trim();
+  if (g && g !== job.guion_voz) { // el usuario editó el guion: re-repartir palabras entre escenas
+    const words = g.split(/\s+/), counts = job.escenas.map((s) => s.texto.split(/\s+/).length), tot = counts.reduce((a, b) => a + b, 0); let k = 0;
+    job.escenas.forEach((s, i) => { const n = i === job.escenas.length - 1 ? words.length - k : Math.max(1, Math.round(counts[i] / tot * words.length)); s.texto = words.slice(k, k + n).join(" "); k += n; });
+    job.guion_voz = g;
+  }
+  job.marcas_tiempo_estimadas = estimateTimeline(job);
+  return job;
+}
+function updatePreview() {
+  const job = collectJob(); if (!job) return;
+  const html = buildHtml(job, job.marcas_tiempo_estimadas, true);
+  $("pv").srcdoc = html; $("pvInfo").textContent = "≈ " + job.marcas_tiempo_estimadas.duration.toFixed(0) + " s · " + job.escenas.length + " escenas";
+}
+addEventListener("message", (e) => { if (e.data && e.data.type === "ad-time") $("pvTime").textContent = (+e.data.t).toFixed(1) + " / " + (+e.data.d).toFixed(1) + " s"; });
+function showData(d) {
+  DATA = d; $("titulo").value = d.titulo || ""; $("guion").value = d.guion_voz || "";
+  const show = { titulo: d.titulo, subtitulo: d.subtitulo, escenas: d.escenas }; if (d.codigo_libre) show.codigo_libre = d.codigo_libre;
+  $("scenesJson").value = JSON.stringify(show, null, 2); updatePreview();
+  localStorage.setItem("autodiag_last", JSON.stringify(d));
+}
+
+$("btnGen").onclick = async () => {
+  const idea = $("idea").value.trim(); if (!idea) return toast("Escribe la idea o pega tu guion");
+  const btn = $("btnGen"); btn.disabled = true; const st = $("genStatus"); st.style.display = "flex"; setStatus(st, "wait", "Gemini está escribiendo el guion y diseñando las escenas…");
+  try { const d = normalize(await callGemini(buildPrompt(idea, $("tpl").value, $("exact").checked, FORMATO)), idea); showData(d); setStatus(st, "ok", "✅ Listo: " + d.escenas.length + " escenas"); }
+  catch (e) { setStatus(st, "", "❌ " + e.message); }
+  btn.disabled = false;
+};
+$("btnApplyJson").onclick = () => { try { const o = JSON.parse($("scenesJson").value); DATA = normalize(Object.assign({}, DATA || {}, o)); $("guion").value = DATA.guion_voz; updatePreview(); toast("Aplicado"); } catch (e) { toast("JSON inválido: " + e.message); } };
+$("guion").addEventListener("change", updatePreview); $("titulo").addEventListener("change", updatePreview);
+$("btnCopyGuion").onclick = async () => { const t = $("guion").value.trim(); try { await navigator.clipboard.writeText(t); toast("Guion copiado"); } catch (e) { $("guion").select(); document.execCommand("copy"); toast("Guion copiado"); } };
+$("btnSpeak").onclick = () => {
+  if (!("speechSynthesis" in window)) return toast("Este dispositivo no tiene voz de prueba");
+  if (speechSynthesis.speaking) { speechSynthesis.cancel(); return; }
+  const u = new SpeechSynthesisUtterance($("guion").value); u.lang = "es-MX"; u.rate = 1.05;
+  const v = speechSynthesis.getVoices().find((x) => /^es/.test(x.lang)); if (v) u.voice = v;
+  $("pv").contentWindow.postMessage({ type: "ad-seek", t: 0 }, "*"); speechSynthesis.speak(u);
+};
+$("btnHtml").onclick = () => { const job = collectJob(); if (!job) return toast("Genera primero"); saveFile("index_hyperframes_" + Date.now() + ".html", new Blob([buildHtml(job, job.marcas_tiempo_estimadas, false)], { type: "text/html" })); };
+
+/* ======================= GitHub: auto-aprovisionamiento ======================= */
+function GH(token) {
+  const call = async (method, path, body, accept) => {
+    const r = await fetch("https://api.github.com" + path, { method, headers: { Authorization: "Bearer " + token, Accept: accept || "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    return r;
+  };
+  const jcall = async (method, path, body) => { const r = await call(method, path, body); const t = await r.text(); let d = null; try { d = t ? JSON.parse(t) : null; } catch (e) { d = t; } if (!r.ok) { const err = new Error((d && d.message) || ("HTTP " + r.status)); err.status = r.status; throw err; } return d; };
+  return { call, jcall };
+}
+$("btnGhGet").onclick = () => openExternal("https://github.com/settings/tokens/new?scopes=repo,workflow&description=AutoDiag_Studio");
+$("btnGhTest").onclick = async () => {
+  const tok = $("ghToken").value.trim(); if (!tok) return toast("Pega tu token");
+  try { const r = await GH(tok).call("GET", "/user"); const d = await r.json(); if (!r.ok) throw new Error(d.message);
+    const scopes = r.headers.get("x-oauth-scopes") || ""; const miss = ["repo", "workflow"].filter((s) => scopes && !scopes.split(/,\s*/).includes(s));
+    setStatus($("ghStatus"), miss.length ? "wait" : "ok", (miss.length ? "🟡 Token de " + d.login + " sin permisos: " + miss.join(", ") : "🟢 Token válido de " + d.login) + (P().cloudReady ? "" : " · falta Auto-Configurar"));
+    P().githubToken = tok; P().owner = d.login; await persist();
+  } catch (e) { setStatus($("ghStatus"), "", "🔴 Token inválido: " + e.message); }
+};
+async function provision() {
+  const p = P(), tok = $("ghToken").value.trim(), repo = ($("ghRepo").value.trim() || "autodiag-hyperframes-engine").replace(/[^\w.-]/g, "-"), priv = $("ghPrivate").value === "1";
+  if (!tok) throw new Error("Pega tu GITHUB_PERSONAL_TOKEN");
+  const L = $("provLog"); L.textContent = ""; const log = (s) => logTo(L, s);
+  const { call, jcall } = GH(tok);
+  log("1/5 · Verificando usuario…"); const user = await jcall("GET", "/user"); log("   ✔ Hola, " + user.login);
+  log("2/5 · Buscando repositorio " + repo + "…");
+  let info; const ex = await call("GET", `/repos/${user.login}/${repo}`);
+  if (ex.ok) { info = await ex.json(); log("   ✔ Ya existe, se actualizará"); }
+  else { info = await jcall("POST", "/user/repos", { name: repo, private: priv, auto_init: true, description: "Motor de render de AutoDiag Video Studio (HyperFrames + Edge-TTS + FFmpeg)" }); log("   ✔ Repositorio creado (" + (priv ? "privado" : "público") + ")"); await sleep(2500); }
+  const branch = info.default_branch || "main";
+  const files = window.CLOUD_FILES || {}; const names = Object.keys(files);
+  log("3/5 · Subiendo motor (" + names.length + " archivos)…");
+  for (const path of names) {
+    let sha; const g = await call("GET", `/repos/${user.login}/${repo}/contents/${path}?ref=${branch}`); if (g.ok) sha = (await g.json()).sha;
+    for (let a = 0; a < 3; a++) { try { await jcall("PUT", `/repos/${user.login}/${repo}/contents/${path}`, { message: "AutoDiag: " + path, content: b64utf8(files[path]), branch, sha }); break; } catch (e) { if (a === 2) throw new Error(path + ": " + e.message); await sleep(1500); } }
+    log("   ✔ " + path);
+  }
+  log("4/5 · Activando GitHub Actions…");
+  try { await call("PUT", `/repos/${user.login}/${repo}/actions/permissions`, { enabled: true, allowed_actions: "all" }); } catch (e) {}
+  let ok = false; for (let i = 0; i < 10 && !ok; i++) { const w = await call("GET", `/repos/${user.login}/${repo}/actions/workflows`); if (w.ok) { const d = await w.json(); ok = (d.workflows || []).some((x) => /render_video\.yml$/.test(x.path)); } if (!ok) await sleep(2000); }
+  log(ok ? "   ✔ Flujo render_video.yml activo" : "   ⚠ El flujo aún no aparece; puede tardar un minuto");
+  Object.assign(p, { githubToken: tok, owner: user.login, repo, branch, private: priv, cloudReady: true, backend: p.backend || "github" }); await persist();
+  log("5/5 · ✅ ¡Nube configurada! Ya puedes renderizar desde 🎬 Estudio."); log("   https://github.com/" + user.login + "/" + repo);
+}
+$("btnProvision").onclick = async () => { const b = $("btnProvision"); b.disabled = true; setStatus($("ghStatus"), "wait", "Configurando…");
+  try { await provision(); refreshLeds(); toast("🚀 Nube lista"); } catch (e) { logTo($("provLog"), "❌ " + e.message); setStatus($("ghStatus"), "", "🔴 " + e.message); } b.disabled = false; };
+$("btnRenderDeploy").onclick = () => { const p = P(); if (!p.cloudReady) return toast("Primero Auto-Configura tu nube (paso 2)"); if (p.private !== false) toast("Render necesita el repositorio público (cámbialo y vuelve a Auto-Configurar)", 6000);
+  openExternal("https://render.com/deploy?repo=" + encodeURIComponent("https://github.com/" + p.owner + "/" + p.repo)); };
+$("btnCopyWorker").onclick = async () => { try { await navigator.clipboard.writeText((window.CLOUD_FILES || {})["worker/worker.js"] || ""); toast("worker.js copiado"); } catch (e) { toast("No se pudo copiar"); } };
+$("btnPxTest").onclick = async () => { const p = P(); p.proxyUrl = $("pxUrl").value.trim().replace(/\/+$/, ""); p.proxyKey = $("pxKey").value.trim();
+  try { const r = await fetch(p.proxyUrl + "/api/jobs/ping", { headers: { "X-App-Key": p.proxyKey } }); if (r.status === 401) throw new Error("App Key incorrecta"); p.proxyOk = true; toast("✅ Servidor conectado"); }
+  catch (e) { p.proxyOk = false; toast("❌ " + e.message); } await persist(); refreshLeds(); };
+
+/* ======================= Backends de render ======================= */
+function githubBackend(p) {
+  const { call, jcall } = GH(p.githubToken), R = `/repos/${p.owner}/${p.repo}`, br = p.branch || "main";
+  async function put(path, b64, msg) { let sha; const g = await call("GET", `${R}/contents/${path}?ref=${br}`); if (g.ok) sha = (await g.json()).sha; await jcall("PUT", `${R}/contents/${path}`, { message: msg, content: b64, branch: br, sha }); }
+  return {
+    async submit(job, audioB64) { if (audioB64) await put(`jobs/${job.id}.mp3`, audioB64, "audio " + job.id); await put(`jobs/${job.id}.json`, b64utf8(JSON.stringify(job)), "job " + job.id);
+      await jcall("POST", `${R}/actions/workflows/render_video.yml/dispatches`, { ref: br, inputs: { job_id: job.id } }); return job.id; },
+    async status(id) {
+      const runs = await jcall("GET", `${R}/actions/runs?event=workflow_dispatch&per_page=40`), run = (runs.workflow_runs || []).find((x) => x.display_title === "render " + id);
+      if (!run) return { state: "queued", step: "Esperando a GitHub Actions" };
+      if (run.status !== "completed") { let step = run.status; try { const j = await jcall("GET", `${R}/actions/runs/${run.id}/jobs`); const s = (j.jobs[0].steps || []); const cur = s.find((x) => x.status === "in_progress") || s.filter((x) => x.status === "completed").pop(); if (cur) step = cur.name; } catch (e) {}
+        return { state: "running", step, run_url: run.html_url }; }
+      const st = await call("GET", `${R}/contents/status.json?ref=render-${id}`, null, "application/vnd.github.raw");
+      if (st.ok) { const s = await st.json(); return { state: s.state, step: s.state === "ok" ? "Completado" : "Error", log: s.log, run_url: run.html_url }; }
+      return { state: run.conclusion === "success" ? "running" : "error", step: run.conclusion, run_url: run.html_url };
+    },
+    async download(id) { const r = await call("GET", `${R}/contents/final.mp4?ref=render-${id}`, null, "application/vnd.github.raw"); if (!r.ok) throw new Error("No se pudo descargar (" + r.status + ")"); return await r.blob(); },
+    async cleanup(id) { try { await call("DELETE", `${R}/git/refs/heads/render-${id}`); } catch (e) {} },
+  };
+}
+function proxyBackend(p) {
+  const h = { "X-App-Key": p.proxyKey }, U = p.proxyUrl;
+  const j = async (m, path, body) => { const r = await fetch(U + path, { method: m, headers: body ? { ...h, "Content-Type": "application/json" } : h, body: body ? JSON.stringify(body) : undefined }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || ("HTTP " + r.status)); return d; };
+  return {
+    async submit(job, audioB64) { return (await j("POST", "/api/jobs", { job, audio_b64: audioB64 || undefined })).id; },
+    status: (id) => j("GET", "/api/jobs/" + id),
+    async download(id) { const r = await fetch(U + "/api/jobs/" + id + "/video", { headers: h }); if (!r.ok) throw new Error("No se pudo descargar"); return await r.blob(); },
+    async cleanup(id) { try { await j("DELETE", "/api/jobs/" + id); } catch (e) {} },
+  };
+}
+function backend() { const p = P(); if (p.backend === "proxy") { if (!p.proxyUrl) throw new Error("Configura la URL del servidor en ⚙️ Cuentas"); return proxyBackend(p); }
+  if (!p.cloudReady) throw new Error("Primero pulsa 🚀 Auto-Configurar mi Nube en ⚙️ Cuentas"); return githubBackend(p); }
+
+const STEP_PCT = [["Descargar", 8], ["Node", 12], ["Python", 15], ["FFmpeg", 22], ["HyperFrames", 35], ["Edge-TTS", 42], ["Renderizar", 60], ["Publicar", 92], ["Limpiar", 96], ["Completado", 100], ["Voz", 45], ["Composición", 55], ["Render de cuadros", 70], ["Mezcla", 90]];
+function pctFor(st) { if (st.state === "ok") return 100; const s = String(st.step || ""); const m = s.match(/\((\d+)%\)/); let p = 5; STEP_PCT.forEach(([k, v]) => { if (s.indexOf(k) >= 0) p = Math.max(p, v); }); if (m) p = Math.max(p, 60 + +m[1] * 0.3); return st.state === "queued" ? 4 : p; }
+
+$("btnRender").onclick = async () => {
+  const job = collectJob(); if (!job) return toast("Primero genera el guion con Gemini");
+  const btn = $("btnRender"), bar = $("prog"), S = $("rStatus"), L = $("rLog"); btn.disabled = true; L.textContent = ""; L.style.display = "none";
+  job.id = "ad" + Date.now().toString(36); const t0 = Date.now();
+  try {
+    const be = backend(); let audioB64 = null; const f = $("audioFile").files[0];
+    if (f) { if (f.size > 25e6) throw new Error("El audio supera 25 MB"); audioB64 = await fileToB64(f); }
+    setStatus(S, "wait", "Enviando trabajo a la nube…"); bar.style.width = "3%";
+    const id = await be.submit(job, audioB64);
+    let st = { state: "queued" };
+    while (true) {
+      await sleep(6000);
+      try { st = await be.status(id); } catch (e) { st = { state: "running", step: "Reintentando: " + e.message }; }
+      const secs = Math.round((Date.now() - t0) / 1000);
+      bar.style.width = pctFor(st) + "%"; setStatus(S, "wait", `⏳ ${st.step || st.state} · ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`);
+      if (st.state === "ok" || st.state === "error") break;
+      if (secs > 3600) throw new Error("Tiempo de espera agotado");
+    }
+    if (st.state === "error") { if (st.log) logTo(L, st.log); throw new Error("El render falló" + (st.run_url ? " · revisa " + st.run_url : "")); }
+    setStatus(S, "wait", "⬇️ Descargando MP4…");
+    const blob = await be.download(id); const name = (job.titulo || "video").replace(/[^\wáéíóúñÁÉÍÓÚÑ-]+/g, "_").slice(0, 40) + "_" + job.formato.replace(":", "x") + ".mp4";
+    await saveFile(name, blob); be.cleanup(id);
+    bar.style.width = "100%"; setStatus(S, "ok", `✅ Listo: ${name} (${(blob.size / 1e6).toFixed(1)} MB)`);
+    STORE.history.unshift({ name, at: new Date().toLocaleString(), size: blob.size }); STORE.history = STORE.history.slice(0, 15); await persist(); renderHistory();
+  } catch (e) { setStatus(S, "", "❌ " + e.message); }
+  btn.disabled = false;
+};
+function renderHistory() { $("hist").innerHTML = (STORE.history || []).map((h) => `<div><span>🎞️ ${h.name}</span><span>${h.at}</span></div>`).join(""); }
+
+/* ======================= Arranque ======================= */
+(async () => {
+  const s = await Vault.load(); if (s && s.profiles) STORE = Object.assign({ history: [] }, s);
+  renderProfiles();
+  try { const last = JSON.parse(localStorage.getItem("autodiag_last") || "null"); if (last) showData(last); else { DATA = null; $("pv").srcdoc = buildHtml({ formato: "9:16", titulo: "AutoDiag Video Studio", escenas: [] }, null, true); } } catch (e) {}
+  if (!P().geminiOk || !P().cloudReady) { if (!localStorage.getItem("autodiag_seen")) { localStorage.setItem("autodiag_seen", "1"); document.querySelector('[data-tab="accounts"]').click(); toast("👋 Configura tus cuentas en 2 minutos", 5000); } }
+  if ("serviceWorker" in navigator && location.protocol === "https:" && !window.Capacitor) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>

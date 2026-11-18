@@ -1,0 +1,105 @@
+name: Compilar AutoDiag Studio (EXE + APK + render de prueba)
+on:
+  push:
+    branches: [autodiag-studio-build]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Dependencias
+        working-directory: windows
+        run: python -m pip install -r requirements.txt
+      - name: Prueba de arranque de la interfaz
+        working-directory: windows
+        continue-on-error: true
+        shell: python
+        run: |
+          import shutil, os, sys
+          shutil.copytree("../cloud", "cloud", dirs_exist_ok=True)
+          sys.path.insert(0, ".")
+          import autodiag_studio_win as A
+          app = A.App(); app.update(); app.after(1500, app.destroy); app.mainloop()
+          print("UI OK")
+      - name: PyInstaller
+        working-directory: windows
+        shell: cmd
+        run: |
+          if not exist cloud xcopy /E /I /Y ..\cloud cloud
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name AutoDiagStudio --icon icon.ico --add-data "cloud;cloud" --add-data "icon.ico;." --collect-data customtkinter autodiag_studio_win.py
+      - uses: actions/upload-artifact@v4
+        with: { name: exe, path: windows/dist/AutoDiagStudio.exe }
+
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - uses: android-actions/setup-android@v3
+      - name: Capacitor
+        working-directory: android
+        run: |
+          npm install --no-audit --no-fund
+          rm -rf www && mkdir -p www && cp -r ../web/* www/
+          npx cap add android
+          npx @capacitor/assets generate --android --iconBackgroundColor "#080D16" --splashBackgroundColor "#080D16" || echo "iconos por defecto"
+          sed -i 's#<application#<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <application android:requestLegacyExternalStorage="true"#' android/app/src/main/AndroidManifest.xml
+          npx cap sync android
+      - name: Gradle assembleDebug
+        working-directory: android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -q
+          cp app/build/outputs/apk/debug/app-debug.apk ../../AutoDiagStudio.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: apk, path: AutoDiagStudio.apk }
+
+  test-render:
+    runs-on: ubuntu-latest
+    env: { CHROME_PATH: /usr/bin/google-chrome }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Render de prueba con el motor real (Edge-TTS + HyperFrames + FFmpeg)
+        working-directory: cloud
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-noto-color-emoji fonts-dejavu-core fonts-jetbrains-mono >/dev/null || sudo apt-get install -y -qq ffmpeg fonts-noto-core >/dev/null
+          npm install --no-audit --no-fund
+          pip install -q edge-tts
+          mkdir -p out
+          bash render/pipeline.sh ../tools/test_job.json out 2>&1 | tee out/log.txt
+          cp out/final.mp4 ../demo_ckp_9x16.mp4
+          cp out/timeline.json ../demo_timeline.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: demo, path: "demo_*\ncloud/out/log.txt" }
+
+  publish:
+    needs: [windows-exe, android-apk, test-render]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: art }
+      - name: Publicar en la rama autodiag-studio-dist
+        run: |
+          mkdir pub && cd pub
+          find ../art -type f -exec cp {} . \;
+          printf "windows=%s\nandroid=%s\nrender=%s\nrun=%s\n" "${{ needs.windows-exe.result }}" "${{ needs.android-apk.result }}" "${{ needs.test-render.result }}" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > build_report.txt
+          ls -la
+          git init -q -b autodiag-studio-dist
+          git config user.name autodiag-bot && git config user.email autodiag-bot@users.noreply.github.com
+          git add -A && git commit -q -m "build ${{ github.run_id }}"
+          git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" autodiag-studio-dist

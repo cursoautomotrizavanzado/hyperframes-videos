@@ -1,0 +1,88 @@
+name: AutoDiag Render
+run-name: "render ${{ inputs.job_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "ID del trabajo (archivo jobs/<id>.json)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      JOB_ID: ${{ inputs.job_id }}
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar FFmpeg y fuentes
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-noto-color-emoji fonts-dejavu-core fonts-jetbrains-mono >/dev/null || \
+          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-dejavu-core >/dev/null
+
+      - name: Instalar HyperFrames + dependencias
+        run: npm install --no-audit --no-fund
+
+      - name: Instalar Edge-TTS (y Whisper si hay audio subido)
+        run: |
+          pip install -q edge-tts
+          if [ -f "jobs/${JOB_ID}.mp3" ]; then pip install -q faster-whisper; fi
+
+      - name: Renderizar video (voz + timestamps + HyperFrames + FFmpeg)
+        run: |
+          mkdir -p out
+          AUDIO=""
+          if [ -f "jobs/${JOB_ID}.mp3" ]; then AUDIO="jobs/${JOB_ID}.mp3"; fi
+          bash render/pipeline.sh "jobs/${JOB_ID}.json" out "$AUDIO" 2>&1 | tee out/log.txt
+          test -s out/final.mp4
+
+      - name: Publicar resultado en la rama render-<id>
+        if: always()
+        run: |
+          STATE="error"
+          if [ -s out/final.mp4 ]; then STATE="ok"; fi
+          mkdir -p pub
+          [ -s out/final.mp4 ] && cp out/final.mp4 pub/final.mp4
+          [ -s out/portada.jpg ] && cp out/portada.jpg pub/portada.jpg
+          [ -s out/timeline.json ] && cp out/timeline.json pub/timeline.json
+          LOGTAIL=$( (tail -n 40 out/log.txt 2>/dev/null || echo "sin log") | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))')
+          echo "{\"id\":\"${JOB_ID}\",\"state\":\"${STATE}\",\"log\":${LOGTAIL}}" > pub/status.json
+          cd pub
+          git init -q -b "render-${JOB_ID}"
+          git config user.name "autodiag-bot"
+          git config user.email "autodiag-bot@users.noreply.github.com"
+          git add -A
+          git commit -q -m "render ${JOB_ID} (${STATE})"
+          git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "render-${JOB_ID}"
+
+      - name: Limpiar archivos del trabajo
+        if: always()
+        run: |
+          git config user.name "autodiag-bot"
+          git config user.email "autodiag-bot@users.noreply.github.com"
+          for i in 1 2 3; do
+            git pull -q --rebase origin "${GITHUB_REF_NAME}" || true
+            git rm -q --ignore-unmatch "jobs/${JOB_ID}.json" "jobs/${JOB_ID}.mp3" || true
+            git diff --cached --quiet && break
+            git commit -q -m "limpiar job ${JOB_ID}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 3
+          done

@@ -1,0 +1,7 @@
+{
+  "appId": "com.autodiag.videostudio",
+  "appName": "AutoDiag Studio",
+  "webDir": "www",
+  "android": { "allowMixedContent": false, "backgroundColor": "#080D16" },
+  "server": { "androidScheme": "https" }
+}

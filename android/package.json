@@ -1,0 +1,21 @@
+{
+  "name": "autodiag-studio-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "APK de AutoDiag Video Studio (Capacitor envuelve la app web)",
+  "scripts": {
+    "prepare-web": "rm -rf www && mkdir -p www && cp -r ../web/* www/",
+    "build:apk": "npm run prepare-web && npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0"
+  }
+}
