@@ -122,15 +122,30 @@ def main():
         w["start"] = round(w["start"] + LEAD, 3)
         w["end"] = round(w["end"] + LEAD, 3)
 
-    # Usar el texto del guion (con puntuación) si la cantidad de palabras coincide
-    if len(words) == len(tokens):
-        for w, tok in zip(words, tokens):
-            w["word"] = tok
-    # Asignar cada palabra a su escena (proporcional al guion)
-    n = len(words)
+    # Alinear las palabras de la voz con las del guion (difflib): cada palabra sabe a qué escena pertenece,
+    # aunque la voz lea números o símbolos con otra cantidad de palabras.
+    import difflib
+    a = [norm(w["word"]) for w in words]
+    b = [norm(t) for t in tokens]
+    idx = [None] * len(a)
+    sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "equal":
+            for k in range(i2 - i1):
+                idx[i1 + k] = j1 + k
+                words[i1 + k]["word"] = tokens[j1 + k]
+        elif tag == "replace":
+            for k in range(i2 - i1):
+                idx[i1 + k] = j1 + min(j2 - j1 - 1, int(k * (j2 - j1) / max(1, i2 - i1)))
+    last = 0
+    for k in range(len(idx)):
+        if idx[k] is None:
+            idx[k] = last
+        last = idx[k]
+    matched = sum(1 for op in sm.get_opcodes() if op[0] == "equal" for _ in range(op[2] - op[1]))
+    print(f"[audio] alineación voz/guion: {matched}/{len(a)} palabras coinciden", flush=True)
     for k, w in enumerate(words):
-        idx = min(len(seg_of) - 1, int(k * len(seg_of) / max(1, n))) if seg_of else 0
-        w["seg"] = seg_of[idx] if seg_of else 0
+        w["seg"] = seg_of[min(len(seg_of) - 1, idx[k])] if seg_of else 0
 
     dur = round(adur + TAIL, 3)
     scenes = []

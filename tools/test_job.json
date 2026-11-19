@@ -96,7 +96,7 @@
   {
    "tipo": "probetas",
    "titulo": "Compara los inyectores",
-   "texto": "Compara los inyectores entre sí: uno que devuelve ocho veces más tiene una fuga grave.",
+   "texto": "Compara los inyectores entre sí: uno que devuelve 8 veces más, 24 cm³ contra 3 cm³, tiene una fuga grave.",
    "datos": {
     "multiplicador": "× 8",
     "items": [
