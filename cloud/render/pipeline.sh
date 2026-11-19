@@ -20,7 +20,11 @@ else
   node "$HERE/capture_fallback.js" "$OUT/project/index.html" "$OUT/muda.mp4" "$FPS"
 fi
 echo "::endgroup::"
-echo "::group::4/4 Mezcla de audio + video (FFmpeg)"
-node "$HERE/finalize.js" "$OUT/muda.mp4" "$OUT/voz.mp3" "$OUT/final.mp4"
+echo "::group::4/4 Diseño sonoro + mezcla de audio y video (FFmpeg)"
+SFX=""
+if node "$HERE/events.js" "$OUT/project/index.html" "$OUT/events.json" && [ -s "$OUT/events.json" ] && \
+   node -e "process.exit(require(require('path').resolve('$OUT/events.json')).sonido===false?1:0)" && \
+   python3 "$HERE/sfx.py" "$OUT/events.json" "$OUT/sfx.wav"; then SFX="$OUT/sfx.wav"; fi
+node "$HERE/finalize.js" "$OUT/muda.mp4" "$OUT/voz.mp3" "$OUT/final.mp4" "$SFX"
 echo "::endgroup::"
 ls -la "$OUT/final.mp4"

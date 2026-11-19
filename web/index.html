@@ -104,6 +104,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
               <option value="rele">Relés ISO / Flujo 12V-24V</option>
               <option value="pinout">Pinout ECU</option>
               <option value="libre">Libre (la IA programa la simulación)</option>
+              <option value="claude">Modo Claude (animación a medida de cada escena)</option>
             </select></div>
         </div>
         <div class="row">
@@ -132,6 +133,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
             <div><label>Cierre: botón</label><input type="text" id="ctaBoton" placeholder="Módulo 0 gratis"></div>
           </div>
         </div>
+        <label style="display:flex;gap:8px;align-items:center;text-transform:none;font:600 13px var(--sans);color:var(--t);margin-top:12px"><input type="checkbox" id="sonido" checked> 🔊 Efectos de sonido sincronizados (−18 dB bajo la voz)</label>
         <label>Audio propio (opcional, MP3/M4A/WAV)</label>
         <input type="file" id="audioFile" accept="audio/*">
         <p class="hint">Si subes tu narración, la nube la transcribe con Whisper y sincroniza la animación palabra por palabra. Sin audio, se genera la voz con Edge-TTS.</p>
@@ -392,8 +394,25 @@ const TPL_HELP = {
   libre: 'datos: {} y además el campo raíz "codigo_libre" (ver abajo)',
 };
 const PAST_TXT = 'ESTILO PASTILLAS (obligatorio en este video): cada escena DEBE incluir además "pastillas": 1 a 3 objetos {"texto":"idea clave dicha en esa escena, máx 40 caracteres","color":"verde|blanco|cian|rojo|ambar|azul"} y "resumen": frase corta de máx 32 caracteres que resume la escena. "titulo" máx 32 caracteres. La ÚLTIMA escena es de tipo "cierre" (su "titulo" es la conclusión en una frase).\nTipos de escena disponibles en este estilo (elige el que ilustre literalmente lo narrado):\n- inyector_retorno → datos: {"riel":true|false,"deposito":true|false,"flujo":"normal|exceso","etiquetas_laterales":[{"texto":"HOLGURAS INTERNAS","color":"verde"}],"manometro":{"valor":0.25,"etiqueta":"PRESIÓN DEL RIEL","alerta":"¡SE DESPERDICIA!"},"retorno_texto":"RETORNO"}\n- manometro → datos: {"valor":0.0-1.0,"etiqueta":"PRESIÓN DEL RIEL","alerta":"texto opcional"}\n- probetas → datos: {"multiplicador":"× 8","items":[{"etiqueta":"INYECTOR 1","valor":"3 cm³","nivel":0.1,"alerta":false}]} (1 a 6 probetas; nivel 0-1 proporcional al valor)\n- lista → datos: {"encabezado":"SI TODOS ESTÁN ALTOS, REVISA:","items":[{"titulo":"PRESIÓN DEL RIEL","detalle":"NO MAYOR A LA PEDIDA"}]} (máx 4)\n- manual → datos: {"titulo":"MANUAL DEL FABRICANTE","nota":"texto corto opcional"}\n- lupa → datos: {"etiqueta":"UNIÓN","detalle":"texto corto opcional"}\n- lineas → datos: {"lineas":[{"etiqueta":"RIEL - ALTA PRESIÓN","tipo":"alta"},{"etiqueta":"RETORNO - BAJA PRESIÓN","tipo":"baja"}]}\n- tarjeta → datos: {"color":"verde","lineas":[{"texto":"PRIMERO","color":"blanco"},{"texto":"CONECTA LAS MANGUERAS","color":"blanco"},{"texto":"ANTES DE ARRANCAR","color":"verde"}]}\n- osciloscopio, pwm, rele, pinout → mismos datos de arriba\n- cierre → datos: {}';
+const ESTILO_DESC = {
+  pastillas: "Pastillas azul — fondo azul marino, ilustración flat de línea limpia (trazos cian/azul de 4-6 px, rellenos muy suaves), acentos ámbar, rojo para fallas. Usa info.P.",
+  osciloscopio: "Osciloscopio Pro — fondo oscuro técnico #080D16, cian #00E5FF, naranja #F76015, rojo +12V, verde masa, amarillo control. Usa info.C = {orange,cyan,red,green,yellow,text,dim,panel,panel2}.",
+  blueprint: "Blueprint técnico — azul plano, líneas blancas/cian finas tipo plano técnico, acento ámbar. Usa info.C.",
+  carbono: "Carbono — negro mate, cian y naranja. Usa info.C.", neon: "Neón — morado oscuro, magenta, cian y amarillo brillantes con glow. Usa info.C.",
+  claro: "Taller claro — fondo blanco, trazos oscuros, acentos cian/naranja. Usa info.C (C.text es oscuro).",
+};
+function claudePrompt(idea, exact, formato, estilo) {
+  const tplTxt = (window.CLOUD_FILES || {})["render/prompt_modo_claude.txt"] || "";
+  const wide = formato === "16:9", past = estilo === "pastillas";
+  const dims = past ? (wide ? [1180, 770] : [960, 680]) : (wide ? [1272, 766] : [872, 726]);
+  return tplTxt.split("{{TEXTO}}").join(idea).split("{{FORMATO}}").join(wide ? "horizontal 16:9 (1920x1080, cursos)" : "vertical 9:16 (1080x1920, Reels/TikTok)")
+    .split("{{ESTILO}}").join(ESTILO_DESC[estilo] || ESTILO_DESC.osciloscopio).split("{{RW}}").join(dims[0]).split("{{RH}}").join(dims[1])
+    .split("{{EXACTO}}").join(exact ? "(úsalo EXACTO: no cambies ni una palabra)" : "(si es solo una idea, escribe tú el guion de 60 a 90 segundos, técnico y natural, y úsalo en los campos texto)");
+}
 function buildPrompt(idea, tpl, exact, formato, estilo) {
-  const past = (estilo || ($("estilo") && $("estilo").value)) === "pastillas";
+  estilo = estilo || ($("estilo") && $("estilo").value) || "osciloscopio";
+  if (tpl === "claude") return claudePrompt(idea, exact, formato, estilo);
+  const past = estilo === "pastillas";
   const tipos = tpl === "auto" ? "Elige para cada escena el tipo que mejor ilustre literalmente lo narrado: concepto, osciloscopio, pwm, rele, pinout." :
     tpl === "libre" ? 'Usa el tipo "libre" en las escenas técnicas (y "concepto" donde convenga).' :
     `La plantilla principal es "${tpl}": úsala en la mayoría de escenas técnicas; puedes usar "concepto" en introducción y cierre.`;
@@ -423,7 +442,7 @@ async function callGemini(prompt) {
   const model = p.model || $("gModel").value || "gemini-2.5-flash";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.6, maxOutputTokens: 16384 } }) });
+    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.6, maxOutputTokens: 32768 } }) });
   const d = await r.json(); if (!r.ok) throw new Error((d.error && d.error.message) || ("HTTP " + r.status));
   const txt = (((d.candidates || [])[0] || {}).content || {}).parts?.map((x) => x.text || "").join("") || "";
   const m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error("Gemini no devolvió JSON");
@@ -446,7 +465,7 @@ function buildHtml(job, timeline, preview) {
   const dur = timeline && timeline.duration ? Number(timeline.duration).toFixed(3) : "10";
   return ENGINE.split("__W__").join(W).split("__H__").join(H).split("__DURATION__").join(dur).split("__FPS__").join(job.fps || 60)
     .replace("/*__JOB__*/null", safeJson(job)).replace("/*__TIMELINE__*/null", timeline ? safeJson(timeline) : "null")
-    .replace("/*__PREVIEW__*/false", preview ? "true" : "false").replace(preview ? '<scr' + 'ipt src="gsap.min.js"></scr' + 'ipt>' : "\u0000", "").replace("/*__LIBRE__*/", String(job.codigo_libre || "").replace(/<\/script/gi, "<\\/script"));
+    .replace("/*__PREVIEW__*/false", preview ? "true" : "false").replace(preview ? '<scr' + 'ipt src="gsap.min.js"></scr' + 'ipt>' : "\u0000", "").replace("/*__LIBRE__*/", (String(job.codigo_libre || "") + "\n" + String(job.codigo_escenas || "")).replace(/<\/script/gi, "<\\/script"));
 }
 function estimateTimeline(job) { // marcas de tiempo estimadas (formato Whisper word-level)
   const segs = job.escenas.map((s) => s.texto || ""), toks = [];
@@ -462,7 +481,7 @@ function collectJob() {
   const job = JSON.parse(JSON.stringify(DATA));
   job.formato = FORMATO; job.fps = +$("fps").value; job.voz = $("voice").value; job.velocidad = $("rate").value;
   job.titulo = $("titulo").value.trim() || job.titulo; job.plantilla = $("tpl").value; job.estilo = $("estilo").value;
-  if (job.estilo === "pastillas") { job.categoria = $("categoria").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.categoria_portada = $("categoriaPortada").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.cta_texto = $("ctaTexto").value.trim() || "Información en mi perfil"; job.cta_boton = $("ctaBoton").value.trim(); job.subtitulos = false; } job.modo = job.codigo_libre ? "libre" : "plantilla";
+  if (job.estilo === "pastillas") { job.categoria = $("categoria").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.categoria_portada = $("categoriaPortada").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.cta_texto = $("ctaTexto").value.trim() || "Información en mi perfil"; job.cta_boton = $("ctaBoton").value.trim(); job.subtitulos = false; } job.modo = job.codigo_escenas ? "claude" : job.codigo_libre ? "libre" : "plantilla"; job.sonido = $("sonido").checked;
   const g = $("guion").value.trim();
   if (g && g !== job.guion_voz) { // el usuario editó el guion: re-repartir palabras entre escenas
     const words = g.split(/\s+/), counts = job.escenas.map((s) => s.texto.split(/\s+/).length), tot = counts.reduce((a, b) => a + b, 0); let k = 0;
@@ -480,7 +499,7 @@ function updatePreview() {
 addEventListener("message", (e) => { if (e.data && e.data.type === "ad-time") $("pvTime").textContent = (+e.data.t).toFixed(1) + " / " + (+e.data.d).toFixed(1) + " s"; });
 function showData(d) {
   DATA = d; $("titulo").value = d.titulo || ""; $("guion").value = d.guion_voz || "";
-  const show = { titulo: d.titulo, subtitulo: d.subtitulo, escenas: d.escenas }; if (d.codigo_libre) show.codigo_libre = d.codigo_libre;
+  const show = { titulo: d.titulo, subtitulo: d.subtitulo, escenas: d.escenas }; if (d.codigo_libre) show.codigo_libre = d.codigo_libre; if (d.codigo_escenas) show.codigo_escenas = d.codigo_escenas;
   $("scenesJson").value = JSON.stringify(show, null, 2); updatePreview();
   localStorage.setItem("autodiag_last", JSON.stringify(d));
 }

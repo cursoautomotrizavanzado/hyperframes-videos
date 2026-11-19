@@ -14,7 +14,7 @@ function buildHtml(template, job, timeline, opts) {
   const wide = job.formato === "16:9";
   const W = wide ? 1920 : 1080, H = wide ? 1080 : 1920;
   const duration = timeline && timeline.duration ? Number(timeline.duration).toFixed(3) : "10";
-  const libre = String(job.codigo_libre || "").replace(/<\/script/gi, "<\\/script");
+  const libre = (String(job.codigo_libre || "") + "\n" + String(job.codigo_escenas || "")).replace(/<\/script/gi, "<\\/script");
   return template
     .split("__W__").join(String(W))
     .split("__H__").join(String(H))

@@ -43,7 +43,8 @@ VOICES = {"Jorge · México (masculina)": "es-MX-JorgeNeural", "Sebastián · Ve
           "Gonzalo · Colombia (masculina)": "es-CO-GonzaloNeural", "Alonso · EE.UU. (masculina)": "es-US-AlonsoNeural",
           "Álvaro · España (masculina)": "es-ES-AlvaroNeural", "Dalia · México (femenina)": "es-MX-DaliaNeural"}
 TEMPLATES = {"Automática (la IA elige)": "auto", "Osciloscopio CKP / CMP": "osciloscopio", "PWM / Inyectores": "pwm",
-             "Relés ISO / Flujo 12V-24V": "rele", "Pinout ECU": "pinout", "Libre (la IA programa la simulación)": "libre"}
+             "Relés ISO / Flujo 12V-24V": "rele", "Pinout ECU": "pinout", "Libre (la IA programa la simulación)": "libre",
+             "Modo Claude (animación a medida)": "claude"}
 ESTILOS = {"Osciloscopio Pro (oscuro)": "osciloscopio", "Blueprint técnico (azul)": "blueprint", "Carbono (negro mate)": "carbono",
            "Neón (morado)": "neon", "Taller claro (fondo blanco)": "claro", "Pastillas azul (sin subtítulos)": "pastillas"}
 RATES = {"Pausada": "-5%", "Normal": "+0%", "Ágil (reels)": "+8%", "Rápida": "+15%"}
@@ -134,7 +135,8 @@ def build_html(job, timeline, preview=False):
     html = html.replace("/*__PREVIEW__*/false", "true" if preview else "false")
     if preview:
         html = html.replace('<script src="gsap.min.js"></script>', "")
-    html = html.replace("/*__LIBRE__*/", re.sub(r"</script", r"<\\/script", job.get("codigo_libre", "") or "", flags=re.I))
+    code = (job.get("codigo_libre", "") or "") + "\n" + (job.get("codigo_escenas", "") or "")
+    html = html.replace("/*__LIBRE__*/", re.sub(r"</script", r"<\\/script", code, flags=re.I))
     return html
 
 
@@ -168,7 +170,31 @@ TPL_HELP = {
 PAST_TXT = 'ESTILO PASTILLAS (obligatorio en este video): cada escena DEBE incluir además "pastillas": 1 a 3 objetos {"texto":"idea clave dicha en esa escena, máx 40 caracteres","color":"verde|blanco|cian|rojo|ambar|azul"} y "resumen": frase corta de máx 32 caracteres que resume la escena. "titulo" máx 32 caracteres. La ÚLTIMA escena es de tipo "cierre" (su "titulo" es la conclusión en una frase).\nTipos de escena disponibles en este estilo (elige el que ilustre literalmente lo narrado):\n- inyector_retorno → datos: {"riel":true|false,"deposito":true|false,"flujo":"normal|exceso","etiquetas_laterales":[{"texto":"HOLGURAS INTERNAS","color":"verde"}],"manometro":{"valor":0.25,"etiqueta":"PRESIÓN DEL RIEL","alerta":"¡SE DESPERDICIA!"},"retorno_texto":"RETORNO"}\n- manometro → datos: {"valor":0.0-1.0,"etiqueta":"PRESIÓN DEL RIEL","alerta":"texto opcional"}\n- probetas → datos: {"multiplicador":"× 8","items":[{"etiqueta":"INYECTOR 1","valor":"3 cm³","nivel":0.1,"alerta":false}]} (1 a 6 probetas; nivel 0-1 proporcional al valor)\n- lista → datos: {"encabezado":"SI TODOS ESTÁN ALTOS, REVISA:","items":[{"titulo":"PRESIÓN DEL RIEL","detalle":"NO MAYOR A LA PEDIDA"}]} (máx 4)\n- manual → datos: {"titulo":"MANUAL DEL FABRICANTE","nota":"texto corto opcional"}\n- lupa → datos: {"etiqueta":"UNIÓN","detalle":"texto corto opcional"}\n- lineas → datos: {"lineas":[{"etiqueta":"RIEL - ALTA PRESIÓN","tipo":"alta"},{"etiqueta":"RETORNO - BAJA PRESIÓN","tipo":"baja"}]}\n- tarjeta → datos: {"color":"verde","lineas":[{"texto":"PRIMERO","color":"blanco"},{"texto":"CONECTA LAS MANGUERAS","color":"blanco"},{"texto":"ANTES DE ARRANCAR","color":"verde"}]}\n- osciloscopio, pwm, rele, pinout → mismos datos de arriba\n- cierre → datos: {}'
 
 
+ESTILO_DESC = {
+    "pastillas": "Pastillas azul — fondo azul marino, ilustración flat de línea limpia (trazos cian/azul de 4-6 px, rellenos muy suaves), acentos ámbar, rojo para fallas. Usa info.P.",
+    "osciloscopio": "Osciloscopio Pro — fondo oscuro técnico #080D16, cian #00E5FF, naranja #F76015, rojo +12V, verde masa, amarillo control. Usa info.C = {orange,cyan,red,green,yellow,text,dim,panel,panel2}.",
+    "blueprint": "Blueprint técnico — azul plano, líneas blancas/cian finas tipo plano técnico, acento ámbar. Usa info.C.",
+    "carbono": "Carbono — negro mate, cian y naranja. Usa info.C.",
+    "neon": "Neón — morado oscuro, magenta, cian y amarillo brillantes con glow. Usa info.C.",
+    "claro": "Taller claro — fondo blanco, trazos oscuros, acentos cian/naranja. Usa info.C (C.text es oscuro).",
+}
+
+
+def claude_prompt(idea, exact, formato, estilo):
+    tpl = open(os.path.join(CLOUD_DIR, "render", "prompt_modo_claude.txt"), encoding="utf-8").read()
+    wide, past = formato == "16:9", estilo == "pastillas"
+    dims = (1180, 770) if (past and wide) else (960, 680) if past else (1272, 766) if wide else (872, 726)
+    rep = {"{{TEXTO}}": idea, "{{FORMATO}}": "horizontal 16:9 (1920x1080, cursos)" if wide else "vertical 9:16 (1080x1920, Reels/TikTok)",
+           "{{ESTILO}}": ESTILO_DESC.get(estilo, ESTILO_DESC["osciloscopio"]), "{{RW}}": str(dims[0]), "{{RH}}": str(dims[1]),
+           "{{EXACTO}}": "(úsalo EXACTO: no cambies ni una palabra)" if exact else "(si es solo una idea, escribe tú el guion de 60 a 90 segundos, técnico y natural, y úsalo en los campos texto)"}
+    for a, b in rep.items():
+        tpl = tpl.replace(a, b)
+    return tpl
+
+
 def build_prompt(idea, tpl, exact, formato, estilo="osciloscopio"):
+    if tpl == "claude":
+        return claude_prompt(idea, exact, formato, estilo)
     if tpl == "auto":
         tipos = "Elige para cada escena el tipo que mejor ilustre literalmente lo narrado: concepto, osciloscopio, pwm, rele, pinout."
     elif tpl == "libre":
@@ -218,7 +244,7 @@ def gemini_models(key):
 def gemini_generate(key, model, prompt):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.6, "maxOutputTokens": 16384}}
+            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.6, "maxOutputTokens": 32768}}
     for attempt in range(3):
         r = requests.post(url, params={"key": key}, json=body, timeout=180)
         if r.status_code in (429, 500, 503) and attempt < 2:
@@ -478,7 +504,8 @@ def render_job(profile, job, audio_path, progress):
 def make_job(data, formato, fps, voz, velocidad, plantilla, estilo="osciloscopio", extras=None):
     job = json.loads(json.dumps(data))
     job.update({"id": "ad" + format(int(time.time() * 1000), "x"), "formato": formato, "fps": int(fps), "voz": voz,
-                "velocidad": velocidad, "plantilla": plantilla, "estilo": estilo, "modo": "libre" if job.get("codigo_libre") else "plantilla",
+                "velocidad": velocidad, "plantilla": plantilla, "estilo": estilo,
+                "modo": "claude" if job.get("codigo_escenas") else "libre" if job.get("codigo_libre") else "plantilla",
                 "created": datetime.now().isoformat(timespec="seconds")})
     if estilo == "pastillas":
         ex = extras or {}
@@ -725,6 +752,8 @@ class App(ctk.CTk):
         self.btn(arow, "🎙️ Audio propio (opcional)", self.pick_audio).pack(side="left")
         self.audio_lbl = ctk.CTkLabel(arow, text="Sin audio: se usará Edge-TTS", font=self.F, text_color=C["dim"])
         self.audio_lbl.pack(side="left", padx=10)
+        self.sfx_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(left, text="🔊 Efectos de sonido sincronizados (−18 dB bajo la voz)", variable=self.sfx_var, font=self.F).pack(anchor="w", pady=4)
         self.btn(left, "✨ Generar guion + animación con Gemini", self.generate, "pri").pack(fill="x", pady=(8, 4))
         self.gen_status = ctk.CTkLabel(left, text="", font=self.FM, text_color=C["yellow"], anchor="w")
         self.gen_status.pack(fill="x")
@@ -807,8 +836,12 @@ class App(ctk.CTk):
         return d
 
     def job_from_ui(self):
-        return make_job(self.current_data(), self.fmt_var.get(), self.fps_var.get(), VOICES[self.voice_var.get()],
-                        RATES[self.rate_var.get()], TEMPLATES[self.tpl_var.get()], ESTILOS[self.style_var.get()], self.past_fields())
+        return self._with_sfx(make_job(self.current_data(), self.fmt_var.get(), self.fps_var.get(), VOICES[self.voice_var.get()],
+                        RATES[self.rate_var.get()], TEMPLATES[self.tpl_var.get()], ESTILOS[self.style_var.get()], self.past_fields()))
+
+    def _with_sfx(self, job):
+        job["sonido"] = bool(self.sfx_var.get())
+        return job
 
     def show_data(self, d):
         self.data = d
@@ -818,6 +851,8 @@ class App(ctk.CTk):
         show = {"titulo": d.get("titulo"), "subtitulo": d.get("subtitulo"), "escenas": d["escenas"]}
         if d.get("codigo_libre"):
             show["codigo_libre"] = d["codigo_libre"]
+        if d.get("codigo_escenas"):
+            show["codigo_escenas"] = d["codigo_escenas"]
         self.scenes.delete("1.0", "end"); self.scenes.insert("1.0", json.dumps(show, ensure_ascii=False, indent=2))
 
     def generate(self):
@@ -968,14 +1003,14 @@ class App(ctk.CTk):
         for col, w in zip("ABCDEFG", (6, 60, 60, 20, 16, 22, 50)):
             ws.column_dimensions[col].width = w
         dv1 = DataValidation(type="list", formula1='"9:16,16:9"', allow_blank=True)
-        dv2 = DataValidation(type="list", formula1='"auto,osciloscopio,pwm,rele,pinout,libre"', allow_blank=True)
+        dv2 = DataValidation(type="list", formula1='"auto,osciloscopio,pwm,rele,pinout,libre,claude"', allow_blank=True)
         ws.add_data_validation(dv1); ws.add_data_validation(dv2)
         dv1.add("D2:D500"); dv2.add("E2:E500")
         ws.freeze_panes = "A2"
         info = wb.create_sheet("Instrucciones")
         for line in ["Llena una fila por video.", "Tema_Tecnico: la idea (Gemini escribe el guion).",
                      "Guion_Audio: si lo llenas, se usa EXACTO como narración.", "Formato: 9:16 (Reels/TikTok) o 16:9 (cursos).",
-                     "Plantilla: auto, osciloscopio, pwm, rele, pinout o libre.",
+                     "Plantilla: auto, osciloscopio, pwm, rele, pinout, libre o claude (animación a medida).",
                      "Estado: lo escribe la app (✅ Completado / ❌ Error). Las filas completadas se saltan.",
                      "Los MP4 se guardan en la carpeta Videos_Listos junto al programa."]:
             info.append([line])
@@ -997,10 +1032,10 @@ class App(ctk.CTk):
         p = dict(self.P())
         if not p.get("geminiKey"):
             return messagebox.showwarning(APP_NAME, "Configura Gemini en ⚙️ Configurar Cuentas")
-        voz, rate, fps, est = VOICES[self.voice_var.get()], RATES[self.rate_var.get()], self.fps_var.get(), ESTILOS[self.style_var.get()]
-        self.thread(lambda: self._batch_worker(p, voz, rate, fps, est))
+        voz, rate, fps, est, sfx = VOICES[self.voice_var.get()], RATES[self.rate_var.get()], self.fps_var.get(), ESTILOS[self.style_var.get()], bool(self.sfx_var.get())
+        self.thread(lambda: self._batch_worker(p, voz, rate, fps, est, sfx))
 
-    def _batch_worker(self, p, voz, rate, fps, est="osciloscopio"):
+    def _batch_worker(self, p, voz, rate, fps, est="osciloscopio", sfx=True):
         path = self.excel_path
         is_csv = path.lower().endswith(".csv")
         try:
@@ -1057,6 +1092,7 @@ class App(ctk.CTk):
                     d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), build_prompt(idea, tpl, bool(guion), fmt, est)), idea)
                     self.blog(f"   ✔ Guion: {len(d['guion_voz'].split())} palabras, {len(d['escenas'])} escenas")
                     job = make_job(d, fmt, fps, voz, rate, tpl, est, p)
+                    job["sonido"] = sfx
                     setv(r, "Estado", "⏳ Renderizando…")
                     dest = render_job(p, job, None, lambda s: self.blog("   " + s) if ("Descargando" in s or "Enviando" in s) else None)
                     setv(r, "Archivo_MP4", dest)

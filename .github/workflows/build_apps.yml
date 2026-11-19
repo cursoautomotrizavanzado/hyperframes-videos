@@ -129,7 +129,7 @@ jobs:
           pip install -q edge-tts
           mkdir -p out
           bash render/pipeline.sh ../tools/test_job.json out 2>&1 | tee out/log.txt
-          cp out/final.mp4 ../demo_pastillas_9x16.mp4
+          cp out/final.mp4 ../demo_modo_claude_9x16.mp4
           cp out/timeline.json ../demo_timeline.json
       - uses: actions/upload-artifact@v4
         if: always()
