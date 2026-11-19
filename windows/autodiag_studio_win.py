@@ -114,8 +114,10 @@ def save_store(store):
 def cloud_files():
     files = {}
     for base, dirs, names in os.walk(CLOUD_DIR):
-        dirs[:] = [d for d in dirs if d not in ("node_modules", "out")]
+        dirs[:] = [d for d in dirs if d not in ("node_modules", "out", "__pycache__")]
         for n in names:
+            if n.endswith((".pyc", ".pyo")):
+                continue
             p = os.path.join(base, n)
             files[os.path.relpath(p, CLOUD_DIR).replace(os.sep, "/")] = open(p, encoding="utf-8").read()
     return files

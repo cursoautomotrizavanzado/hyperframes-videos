@@ -6,8 +6,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLOUD = os.path.join(ROOT, "cloud")
 files = {}
 for base, dirs, names in os.walk(CLOUD):
-    dirs[:] = [d for d in dirs if d not in ("node_modules", "out")]
+    dirs[:] = [d for d in dirs if d not in ("node_modules", "out", "__pycache__")]
     for n in sorted(names):
+        if n.endswith((".pyc", ".pyo")):
+            continue
         p = os.path.join(base, n)
         rel = os.path.relpath(p, CLOUD).replace(os.sep, "/")
         files[rel] = open(p, encoding="utf-8").read()
