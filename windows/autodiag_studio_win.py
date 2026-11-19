@@ -172,7 +172,7 @@ TPL_HELP = {
 }
 
 
-PAST_TXT = 'ESTILO PASTILLAS (obligatorio en este video): cada escena DEBE incluir además "pastillas": 1 a 3 objetos {"texto":"idea clave dicha en esa escena, máx 40 caracteres","color":"verde|blanco|cian|rojo|ambar|azul"} y "resumen": frase corta de máx 32 caracteres que resume la escena. "titulo" máx 32 caracteres. La ÚLTIMA escena es de tipo "cierre" (su "titulo" es la conclusión en una frase).\nTipos de escena disponibles en este estilo (elige el que ilustre literalmente lo narrado):\n- inyector_retorno → datos: {"riel":true|false,"deposito":true|false,"flujo":"normal|exceso","etiquetas_laterales":[{"texto":"HOLGURAS INTERNAS","color":"verde"}],"manometro":{"valor":0.25,"etiqueta":"PRESIÓN DEL RIEL","alerta":"¡SE DESPERDICIA!"},"retorno_texto":"RETORNO"}\n- manometro → datos: {"valor":0.0-1.0,"etiqueta":"PRESIÓN DEL RIEL","alerta":"texto opcional"}\n- probetas → datos: {"multiplicador":"× 8","items":[{"etiqueta":"INYECTOR 1","valor":"3 cm³","nivel":0.1,"alerta":false}]} (1 a 6 probetas; nivel 0-1 proporcional al valor)\n- lista → datos: {"encabezado":"SI TODOS ESTÁN ALTOS, REVISA:","items":[{"titulo":"PRESIÓN DEL RIEL","detalle":"NO MAYOR A LA PEDIDA"}]} (máx 4)\n- manual → datos: {"titulo":"MANUAL DEL FABRICANTE","nota":"texto corto opcional"}\n- lupa → datos: {"etiqueta":"UNIÓN","detalle":"texto corto opcional"}\n- lineas → datos: {"lineas":[{"etiqueta":"RIEL - ALTA PRESIÓN","tipo":"alta"},{"etiqueta":"RETORNO - BAJA PRESIÓN","tipo":"baja"}]}\n- tarjeta → datos: {"color":"verde","lineas":[{"texto":"PRIMERO","color":"blanco"},{"texto":"CONECTA LAS MANGUERAS","color":"blanco"},{"texto":"ANTES DE ARRANCAR","color":"verde"}]}\n- osciloscopio, pwm, rele, pinout → mismos datos de arriba\n- cierre → datos: {}'
+PAST_TXT = 'ESTILO PASTILLAS (obligatorio en este video): cada escena DEBE incluir además "pastillas": 1 a 3 objetos {"texto":"idea clave dicha en esa escena, máx 40 caracteres","color":"verde|blanco|cian|rojo|ambar|azul","palabra":"palabra exacta del texto donde se menciona"} y "resumen": frase corta de máx 32 caracteres que resume la escena. "titulo" máx 32 caracteres. La ÚLTIMA escena es de tipo "cierre" (su "titulo" es la conclusión en una frase).\nTipos de escena disponibles en este estilo (elige el que ilustre literalmente lo narrado):\n- inyector_retorno → datos: {"riel":true|false,"deposito":true|false,"flujo":"normal|exceso","etiquetas_laterales":[{"texto":"HOLGURAS INTERNAS","color":"verde"}],"manometro":{"valor":0.25,"etiqueta":"PRESIÓN DEL RIEL","alerta":"¡SE DESPERDICIA!"},"retorno_texto":"RETORNO"}\n- manometro → datos: {"valor":0.0-1.0,"etiqueta":"PRESIÓN DEL RIEL","alerta":"texto opcional"}\n- probetas → datos: {"multiplicador":"× 8","items":[{"etiqueta":"INYECTOR 1","valor":"3 cm³","nivel":0.1,"alerta":false}]} (1 a 6 probetas; nivel 0-1 proporcional al valor)\n- lista → datos: {"encabezado":"SI TODOS ESTÁN ALTOS, REVISA:","items":[{"titulo":"PRESIÓN DEL RIEL","detalle":"NO MAYOR A LA PEDIDA"}]} (máx 4)\n- manual → datos: {"titulo":"MANUAL DEL FABRICANTE","nota":"texto corto opcional"}\n- lupa → datos: {"etiqueta":"UNIÓN","detalle":"texto corto opcional"}\n- lineas → datos: {"lineas":[{"etiqueta":"RIEL - ALTA PRESIÓN","tipo":"alta"},{"etiqueta":"RETORNO - BAJA PRESIÓN","tipo":"baja"}]}\n- tarjeta → datos: {"color":"verde","lineas":[{"texto":"PRIMERO","color":"blanco"},{"texto":"CONECTA LAS MANGUERAS","color":"blanco"},{"texto":"ANTES DE ARRANCAR","color":"verde"}]}\n- osciloscopio, pwm, rele, pinout → mismos datos de arriba\n- cierre → datos: {}'
 
 
 ESTILO_DESC = {
@@ -196,7 +196,8 @@ def PR():
 
 def wrap_prompt(body, kind, ia="universal"):
     pr = PR()
-    return "\n".join([pr.get("exigencia", ""), pr.get("ias", {}).get(ia) or pr.get("ias", {}).get("universal", ""), "", body, "", pr.get("verificacion", {}).get(kind, "")])
+    return "\n".join([pr.get("exigencia", ""), pr.get("ias", {}).get(ia) or pr.get("ias", {}).get("universal", ""), "", body, "",
+                      pr.get("foco", "") if kind == "escenas" else "", pr.get("verificacion", {}).get(kind, "")])
 
 
 def revision_prompt(guion, escenas):
@@ -271,7 +272,7 @@ Esquemas de "datos" por tipo:
 - pinout → {TPL_HELP['pinout']}
 - concepto → {TPL_HELP['concepto']}
 {(PAST_TXT + chr(10)) if estilo in PAST_FAM else ""}{libre}Responde SOLO JSON válido con esta forma:
-{{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal"}}],"datos":{{}}{',"pastillas":[{"texto":"...","color":"verde"}],"resumen":"..."' if estilo in PAST_FAM else ""}}}]{',"codigo_libre":"..."' if tpl == "libre" else ""}}}"""
+{{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal","palabra":"palabra del texto"}}],"datos":{{}}{',"pastillas":[{"texto":"...","color":"verde"}],"resumen":"..."' if estilo in PAST_FAM else ""}}}]{',"codigo_libre":"..."' if tpl == "libre" else ""}}}"""
 
 
 def gemini_models(key):
@@ -835,6 +836,8 @@ class App(ctk.CTk):
         self.audio_lbl.pack(side="left", padx=10)
         self.sfx_var = ctk.BooleanVar(value=True)
         ctk.CTkCheckBox(left, text="🔊 Efectos de sonido sincronizados (−18 dB bajo la voz)", variable=self.sfx_var, font=self.F).pack(anchor="w", pady=4)
+        self.foco_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(left, text="✨ Resaltar cada ficha cuando la voz la nombra", variable=self.foco_var, font=self.F).pack(anchor="w", pady=4)
         self.btn(left, "✨ Generar guion + animación con Gemini", self.generate, "pri").pack(fill="x", pady=(8, 4))
         self.gen_status = ctk.CTkLabel(left, text="", font=self.FM, text_color=C["yellow"], anchor="w")
         self.gen_status.pack(fill="x")
@@ -926,6 +929,7 @@ class App(ctk.CTk):
 
     def _with_sfx(self, job):
         job["sonido"] = bool(self.sfx_var.get())
+        job["foco"] = bool(self.foco_var.get())
         if CAMARAS.get(self.cam_var.get()):
             job["camara"] = CAMARAS[self.cam_var.get()]
         return job

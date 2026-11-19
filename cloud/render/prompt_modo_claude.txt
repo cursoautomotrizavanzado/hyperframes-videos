@@ -19,7 +19,7 @@ QUÉ DEBES ENTREGAR (solo JSON válido, sin texto antes ni después):
       "pastillas": [ { "texto": "idea clave, máx 40 caracteres", "color": "verde|blanco|cian|rojo|ambar|azul", "palabra": "palabra del texto en la que aparece" } ],
       "resumen": "frase corta, máx 32 caracteres",
       "sonidos": [ { "palabra": "palabra del texto", "tipo": "pop|tick|alerta|whoosh|chime|zumbido|impacto" } ],
-      "badges": [ { "etiqueta": "Vpp", "valor": "4.2 V", "tipo": "senal" } ]
+      "badges": [ { "etiqueta": "Vpp", "valor": "4.2 V", "tipo": "senal", "palabra": "palabra del texto" } ]
     }
   ],
   "codigo_escenas": "código JavaScript (ver reglas) en una sola cadena JSON"
@@ -28,7 +28,7 @@ QUÉ DEBES ENTREGAR (solo JSON válido, sin texto antes ni después):
 REGLAS DEL GUION Y LAS ESCENAS
 - Los "texto" de todas las escenas, unidos con un espacio, deben ser idénticos al texto narrado (no cambies, no agregues ni quites palabras).
 - 4 a 8 escenas. La última escena es "tipo": "cierre" (su "titulo" es la conclusión en una frase; no lleva código).
-- 1 a 3 pastillas por escena; "palabra" debe existir literalmente en el "texto" de esa escena (es el instante en que aparece).
+- 1 a 3 pastillas por escena. Cada pastilla y cada badge lleva "palabra": la palabra exacta del "texto" de esa escena en la que la voz lo menciona (en ese instante aparece y se resalta, y el anterior se atenúa). En el mismo orden en que se dicen.
 - Precisión técnica primero: valores reales y típicos. Nada inventado ni dudoso.
 
 REGLAS DEL CÓDIGO (codigo_escenas)

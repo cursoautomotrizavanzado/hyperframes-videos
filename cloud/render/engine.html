@@ -136,18 +136,73 @@ window.__PREVIEW = /*__PREVIEW__*/false;
   var SW = SC.map(function () { return []; });
   TL.words.forEach(function (w) { var s = (w.seg != null && SW[w.seg]) ? w.seg : sceneAt(w.start); if (SW[s]) SW[s].push(w); });
   function tokMatch(a, b) { return a === b || (b.length >= 4 && a.indexOf(b) === 0) || (a.length >= 4 && b.indexOf(a) === 0); }
-  function cueAbs(i, phrase, nth) {
+  function cueAbs(i, phrase, nth, afterAbs) {
     var ws = SW[i] || [], toks = String(phrase || "").split(/\s+/).map(normW).filter(Boolean), hit = 0, want = Math.max(1, nth || 1);
     if (!toks.length) return null;
     for (var k = 0; k < ws.length; k++) {
       var ok = true;
       for (var m = 0; m < toks.length; m++) { var w = ws[k + m]; if (!w || !tokMatch(normW(w.word), toks[m])) { ok = false; break; } }
-      if (ok && ++hit === want) return ws[k].start;
+      if (ok && (afterAbs == null || ws[k].start >= afterAbs - 0.05) && ++hit === want) return ws[k].start;
     }
     return null;
   }
   function sceneBase(i) { return (PAST && i === 0) ? PORTADA_P - 0.3 : TL.scenes[i].start; }
   function cueLocal(i, phrase, nth) { var a = cueAbs(i, phrase, nth); return a == null ? null : a - sceneBase(i); }
+
+  /* ---------- FOCO: cada ficha aparece y se resalta cuando la voz la menciona ---------- */
+  var NUMW = { "0": "cero", "1": "uno", "2": "dos", "3": "tres", "4": "cuatro", "5": "cinco", "6": "seis", "7": "siete", "8": "ocho", "9": "nueve", "10": "diez", "11": "once", "12": "doce",
+    "13": "trece", "14": "catorce", "15": "quince", "16": "dieciseis", "18": "dieciocho", "20": "veinte", "24": "veinticuatro", "25": "veinticinco", "30": "treinta", "40": "cuarenta",
+    "45": "cuarenta", "50": "cincuenta", "60": "sesenta", "70": "setenta", "75": "setenta", "80": "ochenta", "90": "noventa", "100": "cien", "120": "ciento", "150": "ciento", "200": "doscientos",
+    "250": "doscientos", "300": "trescientos", "400": "cuatrocientos", "500": "quinientos", "800": "ochocientos", "1000": "mil", "1500": "mil", "2000": "dos" };
+  var UNITW = { v: "voltios", mv: "milivoltios", a: "amperios", ma: "miliamperios", kv: "kilovoltios", hz: "hercios", khz: "kilohercios", ms: "milisegundos", s: "segundos", kpa: "kilopascales", bar: "bar", psi: "psi", rpm: "rpm", ohm: "ohmios", ohmios: "ohmios", cm3: "centimetros" };
+  var STOPW = { para: 1, como: 1, esta: 1, este: 1, esto: 1, cuando: 1, donde: 1, entre: 1, sobre: 1, tiene: 1, solo: 1, pero: 1, porque: 1, desde: 1, hasta: 1, todo: 1, todos: 1, cada: 1, muy: 1, mas: 1, menos: 1, puede: 1, debe: 1, hace: 1, sera: 1, sino: 1, tambien: 1, aqui: 1, ahora: 1, siempre: 1, nunca: 1 };
+  function fichaTokens(txt) {
+    var out = [];
+    String(txt || "").replace(/(\d+)(?:[.,]\d+)?\s*([a-zA-ZΩ³]+)?/g, function (m, n, u) { if (NUMW[n]) out.push({ t: NUMW[n], w: 3 }); out.push({ t: n, w: 3 }); if (u) { var un = normW(u === "Ω" ? "ohm" : u); if (UNITW[un]) out.push({ t: UNITW[un], w: 2 }); } return " "; })
+      .split(/\s+/).forEach(function (w) { var n = normW(w); if (n.length >= 4 && !STOPW[n] && !/^\d+$/.test(n)) out.push({ t: n, w: n.length >= 6 ? 2 : 1 }); });
+    return out;
+  }
+  function cueAfterTok(i, tok, afterLocal) {
+    var ws = SW[i] || [], base = sceneBase(i);
+    for (var k = 0; k < ws.length; k++) { var lt = ws[k].start - base; if (lt >= afterLocal - 0.05 && tokMatch(normW(ws[k].word), tok)) return lt; }
+    return null;
+  }
+  function fichaTime(i, o, txt, after) {
+    if (o && o.palabra) { var c = cueAbs(i, o.palabra, 1, after + sceneBase(i)); if (c != null) return c - sceneBase(i); }
+    var toks = fichaTokens(txt);
+    for (var w = 3; w >= 1; w--) { var best = null; toks.forEach(function (tk) { if (tk.w !== w) return; var c = cueAfterTok(i, tk.t, after); if (c != null && (best == null || c < best)) best = c; }); if (best != null) return best; }
+    return null;
+  }
+  function chainTimes(i, list, txtOf) {
+    var ws = SW[i] || [], base = sceneBase(i), s0 = ws.length ? Math.max(0.35, ws[0].start - base) : 0.4, s1 = ws.length ? ws[ws.length - 1].end - base : 3;
+    var raw = [], prev = 0.3;
+    list.forEach(function (o, k) { var c = fichaTime(i, o, txtOf(o), prev); raw.push(c); if (c != null) prev = c + 0.1; });
+    var out = [], last = 0.3;
+    raw.forEach(function (c, k) { if (c == null) c = s0 + (k + 0.5) / list.length * Math.max(0.5, s1 - s0); c = Math.max(c, last); out.push(c); last = c + 0.3; });
+    return out;
+  }
+  var FOCO = JOB.foco !== false && !CAR;
+  function itemsOf(sc) { var d = sc.datos || {}; return (d.items || d.probetas || d.puntos || d.etiquetas_laterales || d.etiquetas || d.pines || []).slice(0, 6); }
+  var FT = [];
+  function buildFT() { return SC.map(function (sc, i) {
+    var r = { p: [], b: [], i: [], all: [] };
+    if (CAR) { r.p = (sc.pastillas || []).map(function () { return 0; }); r.b = (sc.badges || []).map(function () { return 0; }); r.i = itemsOf(sc).map(function () { return 0; }); return r; }
+    r.p = chainTimes(i, (sc.pastillas || []).slice(0, 4), function (p) { return typeof p === "string" ? p : p.texto; });
+    r.b = chainTimes(i, (sc.badges || []).slice(0, 4), function (b) { return (b.etiqueta || b.label || "") + " " + (b.valor || b.value || ""); });
+    r.i = chainTimes(i, itemsOf(sc), function (it) { return typeof it === "string" ? it : [it.titulo, it.etiqueta, it.texto, it.valor, it.detalle].filter(Boolean).join(" "); });
+    r.all = r.p.concat(r.b, r.i).sort(function (a, b) { return a - b; });
+    return r;
+  }); }
+  // estado de una ficha: a = opacidad, act = cuánto está "en foco" (0-1), s = escala
+  function focus(i, t0, local) {
+    if (t0 == null) return { a: 1, act: 0, s: 1 };
+    if (local < t0) return { a: 0, act: 0, s: 0.86 };
+    var p = clamp((local - t0) / 0.3, 0, 1), a = easeOut(p), all = (FT[i] || {}).all || [], nx = null;
+    for (var q = 0; q < all.length; q++) if (all[q] > t0 + 0.02) { nx = all[q]; break; }
+    var act = !FOCO ? 0 : (nx == null || local < nx) ? 1 : clamp(1 - (local - nx) / 0.3, 0, 1);
+    return { a: a * (FOCO ? lerp(0.42, 1, act) : 1), act: act * a, s: 0.86 + 0.14 * a + 0.05 * Math.sin(p * Math.PI) + 0.04 * act * a, t0: t0 };
+  }
+  function glow(color, act) { if (act > 0) { ctx.shadowColor = color; ctx.shadowBlur = 26 * act; } }
 
   /* ---------- Utilidades ---------- */
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -433,9 +488,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (!pts.length) pts = [sc.titulo || "Concepto"];
     var gap = 22, h = Math.min(130, (r.h - 100 - gap * (pts.length - 1)) / pts.length), dur = Math.max(1, (TL.scenes[SC.indexOf(sc)] || {}).end - (TL.scenes[SC.indexOf(sc)] || {}).start || 4);
     pts.forEach(function (p, i) {
-      var a = easeOut((local - i * Math.min(0.9, dur / (pts.length + 1))) / .45); if (a <= 0) return;
-      var y = r.y + 80 + i * (h + gap), x = r.x + 30 + (1 - a) * 60;
-      ctx.save(); ctx.globalAlpha = a; rr(x, y, r.w - 60, h, 14); ctx.fillStyle = C.panel2; ctx.fill(); ctx.strokeStyle = i % 2 ? C.cyan : C.orange; ctx.lineWidth = 3; ctx.stroke();
+      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local), a = ff.a; if (a <= 0) return;
+      var y = r.y + 80 + i * (h + gap), x = r.x + 30 + (1 - Math.min(1, a / 0.42)) * 60;
+      ctx.save(); ctx.globalAlpha = a; rr(x, y, r.w - 60, h, 14); ctx.fillStyle = C.panel2; ctx.fill(); glow(i % 2 ? C.cyan : C.orange, ff.act); ctx.strokeStyle = i % 2 ? C.cyan : C.orange; ctx.lineWidth = 3 + 2 * ff.act; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = i % 2 ? C.cyan : C.orange; ctx.beginPath(); ctx.arc(x + 46, y + h / 2, 18, 0, 7); ctx.fill();
       font(26, 900, MONO); text(String(i + 1), x + 46, y + h / 2 + 9, C.ink, "center");
       var f = fitFont(String(p), r.w - 160, h - 20, WIDE ? 44 : 46, 26, 800, 2); font(f.px, 800);
@@ -451,14 +506,14 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var cols = WIDE ? 1 : Math.min(bs.length, 2), rows = Math.ceil(bs.length / cols), gap = 18;
     var bw = (r.w - gap * (cols - 1)) / cols, bh = WIDE ? Math.min(190, (r.h - gap * (rows - 1)) / rows) : (r.h - gap * (rows - 1)) / rows;
     bs.forEach(function (b, i) {
-      var a = easeOut((local - 0.25 - i * 0.22) / .4); if (a <= 0) return;
+      var ii = SC.indexOf(sc), ff = focus(ii, (FT[ii] || { b: [] }).b[i], local), a = ff.a, t0b = ff.t0 == null ? 0.25 + i * 0.22 : ff.t0; if (a <= 0) return;
       var col = TIPO_COLOR[String(b.tipo || "").toLowerCase()] || C.cyan, x = r.x + (i % cols) * (bw + gap), y = r.y + Math.floor(i / cols) * (bh + gap);
-      ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1 - a) * 30);
-      rr(x, y, bw, bh, 16); ctx.fillStyle = C.panel; ctx.fill(); ctx.strokeStyle = C.border; ctx.lineWidth = 2; ctx.stroke();
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1 - Math.min(1, a / 0.42)) * 30);
+      rr(x, y, bw, bh, 16); ctx.fillStyle = C.panel; ctx.fill(); glow(col, ff.act); ctx.strokeStyle = ff.act > 0.05 ? col : C.border; ctx.lineWidth = 2 + 2 * ff.act; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = col; ctx.fillRect(x, y + 16, 6, bh - 32);
       font(WIDE ? 22 : 24, 700, MONO); text(String(b.etiqueta || b.label || "").toUpperCase(), x + 26, y + 40, C.dim);
       var val = String(b.valor || b.value || ""), m = val.match(/^(-?\d+(?:[.,]\d+)?)(.*)$/);
-      if (m) { var target = parseFloat(m[1].replace(",", ".")), dec = (m[1].split(/[.,]/)[1] || "").length; val = (target * easeOut((local - 0.25 - i * 0.22) / 0.9)).toFixed(dec).replace(".", m[1].indexOf(",") >= 0 ? "," : ".") + m[2]; }
+      if (m) { var target = parseFloat(m[1].replace(",", ".")), dec = (m[1].split(/[.,]/)[1] || "").length; val = (target * easeOut((local - t0b) / 0.9)).toFixed(dec).replace(".", m[1].indexOf(",") >= 0 ? "," : ".") + m[2]; }
       var full = String(b.valor || b.value || ""), f = fitFont(full, bw - 50, bh - 60, WIDE ? 64 : 70, 22, 800, 1, MONO); ctx.font = "800 " + f.px + "px " + MONO;
       ctx.shadowColor = col; ctx.shadowBlur = 14; text(val, x + 26, y + bh - 26, col); ctx.restore();
     });
@@ -573,6 +628,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     px = pfit(txt, maxW - px * 1.6, px, 14, opt.weight || 700);
     var w = ctx.measureText(txt).width + px * 1.5, h = px * 1.85, x = opt.left ? cx : cx - w / 2, sc = opt.pop === undefined ? 1 : opt.pop;
     ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x + w / 2, y + h / 2); ctx.scale(sc, sc); ctx.translate(-(x + w / 2), -(y + h / 2));
+    if (opt.act) { ctx.save(); ctx.globalAlpha *= opt.act * 0.35; rr(x - 8, y - 8, w + 16, h + 16, (h + 16) / 2); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 30; ctx.fill(); ctx.restore(); }
     if (opt.dot) { // píldora de vidrio con punto de color (estilo isométrico)
       w += px * 1.1; x = opt.left ? cx : cx - w / 2;
       rr(x, y, w, h, h / 2); ctx.fillStyle = "rgba(10,20,42,.82)"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.16)"; ctx.stroke();
@@ -635,7 +691,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     }
     side.slice(0, 3).forEach(function (lb, i) {
       var txt = typeof lb === "string" ? lb : lb.texto, col = pcol(lb.color, i ? P.cyan : P.green), bw = R.w * 0.36, bh = R.h * 0.11, by = injTop + injH * 0.25 + i * bh * 1.35, bx = R.x + 10;
-      var a = popIn(local, 0.3 + i * 0.35).a; pbox(bx, by, bw, bh, col, a); ctx.save(); ctx.globalAlpha *= a; plabel(txt, bx + bw / 2, by + bh / 2, P.white, Math.round(bh * 0.28)); ctx.restore();
+      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local), a = ff.a; ctx.save(); glow(col, ff.act); pbox(bx, by, bw, bh, col, a); ctx.restore(); ctx.save(); ctx.globalAlpha *= a; plabel(txt, bx + bw / 2, by + bh / 2, P.white, Math.round(bh * 0.28)); ctx.restore();
       ctx.save(); ctx.globalAlpha *= a; stroke([[bx + bw, by + bh / 2], [inj.left[0], by + bh / 2]], col, 4, 1); ctx.restore();
     });
     var rx = hasGauge ? injX + R.w * 0.14 : R.x + R.w * 0.86, retY = inj.top[1];
@@ -655,10 +711,10 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var d = sc.datos || {}, items = (d.items || d.probetas || []).slice(0, 6); if (!items.length) items = [{ etiqueta: "1", nivel: .2 }, { etiqueta: "2", nivel: .2 }];
     var n = items.length, gap = R.w / n, tw = Math.min(110, gap * 0.48), th = R.h * 0.62, top = R.y + R.h * 0.1;
     items.forEach(function (it, i) {
-      var cx = R.x + gap * (i + .5), x = cx - tw / 2, a = popIn(local, i * 0.12).a, alert = it.alerta === true || it.alerta === "true", col = alert ? P.red : "#C99A2E";
-      ctx.save(); ctx.globalAlpha *= a; rr(x, top, tw, th, 10); ctx.fillStyle = "rgba(141,180,255,.05)"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#B9CCF0"; ctx.stroke();
+      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local), cx = R.x + gap * (i + .5), x = cx - tw / 2, a = Math.max(ff.a, FOCO ? 0 : 0), alert = it.alerta === true || it.alerta === "true", col = alert ? P.red : "#C99A2E";
+      ctx.save(); ctx.globalAlpha *= a; glow(alert ? P.red : P.cyan, ff.act); rr(x, top, tw, th, 10); ctx.fillStyle = "rgba(141,180,255,.05)"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#B9CCF0"; ctx.stroke();
       ctx.strokeStyle = "rgba(185,204,240,.6)"; ctx.lineWidth = 2; for (var k = 1; k <= 5; k++) { var yy = top + th * k / 6; ctx.beginPath(); ctx.moveTo(x + 8, yy); ctx.lineTo(x + tw * 0.32, yy); ctx.stroke(); }
-      var lvl = clamp(num(it.nivel, 0.12), 0, 1) * easeOut((local - 0.4 - i * 0.15) / 1.4), fh = (th - 12) * lvl;
+      ctx.shadowBlur = 0; var lvl = clamp(num(it.nivel, 0.12), 0, 1) * easeOut((local - (ff.t0 == null ? 0.4 + i * 0.15 : ff.t0 + 0.1)) / 1.2), fh = (th - 12) * lvl;
       ctx.fillStyle = col; rr(x + 6, top + th - 6 - fh, tw - 12, Math.max(0, fh), 4); if (fh > 1) ctx.fill();
       plabel(it.etiqueta || ("N.º " + (i + 1)), cx, top + th + 30, P.white, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800);
       if (it.valor) plabel(it.valor, cx, top + th + 64, alert ? P.red : P.green, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800, true);
@@ -671,9 +727,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (d.encabezado) plabel(d.encabezado, R.x + R.w / 2, R.y + 30, P.amber, WIDE ? 26 : 30, "center", 800);
     var top = R.y + (d.encabezado ? 70 : 20), ch = Math.min(150, (R.h - (top - R.y) - 20) / Math.max(1, items.length) - 22), cw = R.w * 0.86, cx = R.x + (R.w - cw) / 2;
     items.forEach(function (it, i) {
-      var p = popIn(local, 0.2 + i * 0.5, 0.4); if (p.a <= 0) return; var y = top + i * (ch + 22), col = cols[i % 4];
+      var p = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local); if (p.a <= 0) return; var y = top + i * (ch + 22), col = cols[i % 4];
       var tt = typeof it === "string" ? it : it.titulo, dt = typeof it === "string" ? "" : it.detalle;
-      ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(0, (1 - p.a) * 20); rr(cx, y, cw, ch, 16); ctx.fillStyle = P.fill; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+      ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(0, (1 - Math.min(1, p.a / 0.42)) * 20); rr(cx, y, cw, ch, 16); ctx.fillStyle = P.fill; ctx.fill(); glow(col, p.act); ctx.lineWidth = 4 + 2 * p.act; ctx.strokeStyle = col; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx + ch * 0.45, y + ch / 2, ch * 0.24, 0, 7); ctx.fill(); plabel(String(i + 1), cx + ch * 0.45, y + ch / 2 + 2, P.white, Math.round(ch * 0.26), "center", 800);
       var tx = cx + ch * 0.9 + (cw - ch * 0.9) / 2; plabel(tt || "", tx, y + ch * (dt ? 0.38 : 0.5), P.white, pfit(String(tt || "").toUpperCase(), cw - ch * 1.1, WIDE ? 28 : 32, 16, 800), "center", 800);
       if (dt) plabel(dt, tx, y + ch * 0.68, col, pfit(String(dt).toUpperCase(), cw - ch * 1.1, WIDE ? 22 : 26, 14, 700));
@@ -825,7 +881,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     });
     return out;
   }
-  var PT = SC.map(function (s, i) { return pillTimes(i); });
+  FT = buildFT();
+  var PT = SC.map(function (s, i) { return FT[i].p; });
 
   /* ---------- Modo Claude: código de animación a medida (window.renderEscena) ---------- */
   var AD_LIB = { clamp: clamp, lerp: lerp, ease: ease, easeOut: easeOut, num: num, rr: rr, wrap: wrap, popIn: popIn,
@@ -857,7 +914,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       if (PAST) {
         if (sc.tipo === "cierre" && i === SC.length - 1) add(base + 1.0, "chime");
         else { PT[i].forEach(function (lt, k) { var p = (sc.pastillas || [])[k] || {}; add(base + lt, /rojo|red/i.test(p.color || "") ? "alerta" : "pop"); }); if (sc.resumen) add(base + 0.25, "tick"); }
-      } else (sc.badges || []).slice(0, 4).forEach(function (b, k) { add(st.start + 0.25 + k * 0.22, /falla/i.test(b.tipo || "") ? "alerta" : "tick"); });
+      } else (sc.badges || []).slice(0, 4).forEach(function (b, k) { add(base + FT[i].b[k], /falla/i.test(b.tipo || "") ? "alerta" : "tick"); });
+      if (!CAR) FT[i].i.forEach(function (lt) { add(base + lt, "tick"); });
       (sc.sonidos || []).forEach(function (so) { var c = so.palabra ? cueLocal(i, so.palabra) : (so.t != null ? +so.t : null); if (c != null) add(base + c, so.tipo || "pop"); });
     });
     ev.sort(function (a, b) { return a.t - b.t; });
@@ -908,14 +966,15 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       // etiquetas holográficas (estilo isométrico): título pequeño + cifra grande
       if (ISO && (sc.badges || []).length) {
         var bs = sc.badges.slice(0, 3), bw = WIDE ? 280 : Math.min(300, (900 - 20 * (bs.length - 1)) / bs.length), bh = WIDE ? 120 : 130, bx0 = (WIDE ? PL.pillsX - bw / 2 : W / 2 - (bs.length * bw + (bs.length - 1) * 20) / 2);
-        bs.forEach(function (b, k) { var pp = popIn(local, 0.35 + k * 0.25, .35); holoTag(WIDE ? bx0 : bx0 + k * (bw + 20), WIDE ? py + k * (bh + 16) : py, bw, bh, b.etiqueta || b.label, b.valor || b.value, TIPO_COLOR[String(b.tipo || "").toLowerCase()] || P.cyan, pp.a); });
+        bs.forEach(function (b, k) { var pp = focus(i, FT[i].b[k], local), hc = TIPO_COLOR[String(b.tipo || "").toLowerCase()] || P.cyan, hx = WIDE ? bx0 : bx0 + k * (bw + 20), hy = WIDE ? py + k * (bh + 16) : py;
+          ctx.save(); ctx.translate(hx + bw / 2, hy + bh / 2); ctx.scale(pp.s, pp.s); ctx.translate(-(hx + bw / 2), -(hy + bh / 2)); glow(hc, pp.act); holoTag(hx, hy, bw, bh, b.etiqueta || b.label, b.valor || b.value, hc, pp.a); ctx.restore(); });
         py += WIDE ? bs.length * (bh + 16) : bh + 24;
       }
       // pastillas (aparecen con la palabra dicha)
       var ps = (sc.pastillas || []).slice(0, ISO ? 2 : 4);
       ps.forEach(function (p, k) {
-        var txt = typeof p === "string" ? p : p.texto, col = pcol(p.color, [P.amber, P.blue, P.green, P.white][k % 4]), pp = popIn(local, PT[i][k], .3);
-        var h = pill(txt, WIDE ? PL.pillsX : W / 2, py, col, k === 0 ? pxs : pxs - 3, pp.a, { pop: pp.s, maxW: PL.pillsW, dot: ISO });
+        var txt = typeof p === "string" ? p : p.texto, col = pcol(p.color, [P.amber, P.blue, P.green, P.white][k % 4]), pp = focus(i, PT[i][k], local);
+        var h = pill(txt, WIDE ? PL.pillsX : W / 2, py, col, k === 0 ? pxs : pxs - 3, pp.a, { pop: pp.s, maxW: PL.pillsW, dot: ISO, act: pp.act });
         py += (h || pxs * 1.85) + 14;
       });
       // frase resumen
