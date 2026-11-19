@@ -101,7 +101,6 @@ function cap(name) { const f = path.join(OUT, `${String(++shot).padStart(2, "0")
   await page.evaluate(() => { const e = document.getElementById("ghToken"); e.value = "ghp_invalido123"; e.dispatchEvent(new Event("change")); });
   await tap("#btnGhTest", "probar_github_invalido"); await sleep(4000); rec("ghStatus", await page.evaluate(() => document.getElementById("ghStatus").textContent));
   await tap("#btnProvision", "autoconfigurar_invalido"); await sleep(4000); rec("provLog", await page.evaluate(() => document.getElementById("provLog").textContent));
-  await tap("#btnGKeyGet", "obtener_api_key"); await sleep(2500); cap("tras_obtener_key"); sh("adb shell input keyevent KEYCODE_BACK"); await sleep(2000);
   await tap('[data-tab="studio"]', "tab_estudio_2");
   for (const [sel, n] of [["#btnGen", "generar_vacio"], ["#btnPromptCopy", "prompt_vacio"], ["#btnCopyGuion", "copiar_guion"], ["#btnSpeak", "voz_prueba"], ["#btnHtml", "html"], ["#btnRender", "render_sin_datos"]]) await tap(sel, n);
   await page.evaluate(() => { document.getElementById("guion").value = "El sensor CKP inductivo genera una señal alterna. El hueco marca la referencia."; });
@@ -109,6 +108,11 @@ function cap(name) { const f = path.join(OUT, `${String(++shot).padStart(2, "0")
   await page.evaluate(() => { document.querySelector("details").open = true; document.getElementById("scenesJson").value = '```json\n{"titulo":"Prueba","escenas":[{"tipo":"osciloscopio","texto":"El sensor CKP inductivo genera una señal alterna.","datos":{"senal":"ckp_inductivo","rpm":800,"resaltar":"diente_faltante"}}]}\n```'; });
   await tap("#btnApplyJson", "aplicar_escenas"); await sleep(2500); cap("vista_previa");
   rec("pvInfo", await page.evaluate(() => document.getElementById("pvInfo").textContent));
+  await tap('[data-tab="social"]', "tab_redes"); rec("vistas", await tabState());
+  for (const [sel, n] of [["#btnRevPrompt", "rev_prompt"], ["#btnCopyPrompt", "copies_prompt"], ["#btnCarPrompt", "car_prompt"], ["#btnRevGem", "rev_gemini_sin_llave"]]) await tap(sel, n);
+  fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n"));
+  await tap('[data-tab="accounts"]', "tab_cuentas_3");
+  await tap("#btnGKeyGet", "obtener_api_key"); await sleep(2500); cap("tras_obtener_key");
   fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n"));
   ws.close();
 })().catch((e) => { rec("FATAL", String(e && e.stack || e)); fs.writeFileSync(path.join(OUT, "results.txt"), log.join("\n")); process.exit(0); });
