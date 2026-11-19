@@ -42,4 +42,6 @@ REGLAS DEL CÓDIGO (codigo_escenas)
 - Biblioteca info.lib (úsala): clamp, lerp, ease, easeOut, rr(x,y,w,h,radio) traza un rectángulo redondeado (luego ctx.fill/stroke), label(...), box(x,y,w,h,color,alpha) recuadro con borde, stroke(puntos,color,grosor,progreso0a1) línea que se dibuja progresivamente, flowDots(puntos,color,info.t,velocidad,separacion,radio,progreso) puntos que fluyen, stripes(puntos,c1,c2,grosor,info.t,velocidad,progreso) flujo a franjas, injector(cx,top,alto,color,alpha) dibuja un inyector y devuelve {top,left,mid,bottom}, gauge(cx,cy,radio,valor0a1,info.local,etiqueta,alerta) manómetro, pill(texto,cx,y,color,px,alpha), scope(rect) pantalla de osciloscopio que devuelve el área de la grilla, trace(grilla,fn(ms)->voltios,ventanaMs,voltiosDiv,offsetDiv,color,progreso).
 - Usa ctx.save()/ctx.restore() alrededor de cambios de globalAlpha, sombras o recortes.
 - El código va dentro de una cadena JSON: escapa comillas y saltos de línea. Sin comentarios largos. Debe ser JavaScript válido (ES5 o ES2015).
+{{ISO}}
+- Cámara (opcional por escena): "camara": {"zoom": 1.4, "x": 0.5, "y": 0.5, "palabra": "palabra del texto"} acerca la vista a ese punto de info.R cuando se dice la palabra.
 - Si una escena no necesita dibujo propio, "default: return false;" hace que el motor use su plantilla.

@@ -46,7 +46,12 @@ TEMPLATES = {"Automática (la IA elige)": "auto", "Osciloscopio CKP / CMP": "osc
              "Relés ISO / Flujo 12V-24V": "rele", "Pinout ECU": "pinout", "Libre (la IA programa la simulación)": "libre",
              "Modo Claude (animación a medida)": "claude"}
 ESTILOS = {"Osciloscopio Pro (oscuro)": "osciloscopio", "Blueprint técnico (azul)": "blueprint", "Carbono (negro mate)": "carbono",
-           "Neón (morado)": "neon", "Taller claro (fondo blanco)": "claro", "Pastillas azul (sin subtítulos)": "pastillas"}
+           "Neón (morado)": "neon", "Taller claro (fondo blanco)": "claro", "Pastillas azul (sin subtítulos)": "pastillas",
+           "Isométrico premium (sin subtítulos)": "isometrico", "Isométrico 3D técnico (sin subtítulos)": "isometrico3d"}
+PAST_FAM = ("pastillas", "isometrico", "isometrico3d")
+CAMARAS = {"Cámara automática": "", "Dinámica (zoom y acercamientos)": "dinamica", "Suave (deslizar)": "suave", "Sin movimiento": "ninguna"}
+IAS = {"Prompt universal (cualquier IA)": "universal", "Para Claude": "claude", "Para Gemini": "gemini", "Para ChatGPT": "chatgpt",
+       "Para DeepSeek": "deepseek", "Para Kimi": "kimi"}
 RATES = {"Pausada": "-5%", "Normal": "+0%", "Ágil (reels)": "+8%", "Rápida": "+15%"}
 
 
@@ -126,7 +131,7 @@ def safe_json(o):
 
 def build_html(job, timeline, preview=False):
     wide = job.get("formato") == "16:9"
-    W, H = (1920, 1080) if wide else (1080, 1920)
+    W, H = (1920, 1080) if wide else (1080, 1350) if job.get("formato") == "4:5" else (1080, 1920)
     dur = "%.3f" % timeline["duration"] if timeline else "10"
     html = engine_template()
     for a, b in (("__W__", str(W)), ("__H__", str(H)), ("__DURATION__", dur), ("__FPS__", str(job.get("fps", 60)))):
@@ -177,15 +182,54 @@ ESTILO_DESC = {
     "carbono": "Carbono — negro mate, cian y naranja. Usa info.C.",
     "neon": "Neón — morado oscuro, magenta, cian y amarillo brillantes con glow. Usa info.C.",
     "claro": "Taller claro — fondo blanco, trazos oscuros, acentos cian/naranja. Usa info.C (C.text es oscuro).",
+    "isometrico": "Isométrico premium — ilustración isométrica 2D sobre fondo azul muy oscuro con rejilla isométrica blueprint tenue y viñeta; piezas metálicas con degradado, cortes en modo fantasma cian, partículas de flujo (ámbar entrada/falla, cian señal, rojo calor), etiquetas holográficas. Usa info.P y las funciones iso de info.lib.",
+    "isometrico3d": "Isométrico 3D técnico — piezas isométricas sólidas con sombreado metálico, suelo oscuro con rejilla azul tipo plano técnico, cortes seccionados con partículas (cian combustible, ámbar retorno/fuga), instrumentos con bisel metálico e insignias verdes. Usa info.P y las funciones iso de info.lib.",
 }
+
+
+def PR():
+    try:
+        return json.load(open(os.path.join(CLOUD_DIR, "render", "prompts.json"), encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def wrap_prompt(body, kind, ia="universal"):
+    pr = PR()
+    return "\n".join([pr.get("exigencia", ""), pr.get("ias", {}).get(ia) or pr.get("ias", {}).get("universal", ""), "", body, "", pr.get("verificacion", {}).get(kind, "")])
+
+
+def revision_prompt(guion, escenas):
+    return PR()["revision"].replace("{{GUION}}", guion).replace("{{ESCENAS}}", json.dumps(
+        [{k: e.get(k) for k in ("titulo", "texto", "badges", "pastillas", "datos")} for e in escenas], ensure_ascii=False))
+
+
+def copies_prompt(guion, titulo, cta):
+    return PR()["copies"].replace("{{GUION}}", guion).replace("{{TITULO}}", titulo or "").replace("{{CTA}}", cta)
+
+
+def carrusel_prompt(tema, n, estilo, categoria, cta):
+    pr = PR()
+    return (pr["carrusel"].replace("{{TEMA}}", tema).replace("{{N}}", str(n)).replace("{{ESTILO}}", ESTILO_DESC.get(estilo, estilo))
+            .replace("{{CATEGORIA}}", categoria).replace("{{CTA}}", cta).replace("{{CATALOGO}}", pr.get("catalogo", "")).replace("{{CLAUDE}}", ""))
+
+
+def copies_text(o):
+    out = []
+    for red in ("tiktok", "instagram", "facebook"):
+        if o.get(red):
+            c = o[red]
+            out.append(f"=== {red.upper()} ===\n{c.get('gancho', '')}\n\n{c.get('descripcion', '')}\n\n{c.get('hashtags', '')}")
+    return "\n\n".join(out)
 
 
 def claude_prompt(idea, exact, formato, estilo):
     tpl = open(os.path.join(CLOUD_DIR, "render", "prompt_modo_claude.txt"), encoding="utf-8").read()
-    wide, past = formato == "16:9", estilo == "pastillas"
+    wide, past = formato == "16:9", estilo in PAST_FAM
     dims = (1180, 770) if (past and wide) else (960, 680) if past else (1272, 766) if wide else (872, 726)
     rep = {"{{TEXTO}}": idea, "{{FORMATO}}": "horizontal 16:9 (1920x1080, cursos)" if wide else "vertical 9:16 (1080x1920, Reels/TikTok)",
            "{{ESTILO}}": ESTILO_DESC.get(estilo, ESTILO_DESC["osciloscopio"]), "{{RW}}": str(dims[0]), "{{RH}}": str(dims[1]),
+           "{{ISO}}": PR().get("iso_claude", "") if estilo.startswith("isometrico") else "",
            "{{EXACTO}}": "(úsalo EXACTO: no cambies ni una palabra)" if exact else "(si es solo una idea, escribe tú el guion de 60 a 90 segundos, técnico y natural, y úsalo en los campos texto)"}
     for a, b in rep.items():
         tpl = tpl.replace(a, b)
@@ -226,8 +270,8 @@ Esquemas de "datos" por tipo:
 - rele → {TPL_HELP['rele']}
 - pinout → {TPL_HELP['pinout']}
 - concepto → {TPL_HELP['concepto']}
-{(PAST_TXT + chr(10)) if estilo == "pastillas" else ""}{libre}Responde SOLO JSON válido con esta forma:
-{{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal"}}],"datos":{{}}{',"pastillas":[{"texto":"...","color":"verde"}],"resumen":"..."' if estilo == "pastillas" else ""}}}]{',"codigo_libre":"..."' if tpl == "libre" else ""}}}"""
+{(PAST_TXT + chr(10)) if estilo in PAST_FAM else ""}{libre}Responde SOLO JSON válido con esta forma:
+{{"titulo":"gancho de portada (máx 55 caracteres)","subtitulo":"frase corta","guion_voz":"...","escenas":[{{"tipo":"...","titulo":"máx 38 caracteres","etiqueta":"MAYÚSCULAS CORTA","texto":"fragmento del guion","badges":[{{"etiqueta":"Vpp","valor":"4.2 V","tipo":"senal"}}],"datos":{{}}{',"pastillas":[{"texto":"...","color":"verde"}],"resumen":"..."' if estilo in PAST_FAM else ""}}}]{',"codigo_libre":"..."' if tpl == "libre" else ""}}}"""
 
 
 def gemini_models(key):
@@ -279,7 +323,7 @@ def parse_scenes_text(txt):
 
 def normalize(d, fallback=""):
     tipos = ("concepto", "osciloscopio", "pwm", "rele", "pinout", "libre", "inyector_retorno", "manometro", "probetas", "lista",
-             "manual", "lupa", "lineas", "tarjeta", "cierre")
+             "manual", "lupa", "lineas", "tarjeta", "cierre", "portada")
     d["escenas"] = [s for s in d.get("escenas", []) if s and s.get("texto")]
     if not d["escenas"]:
         d["escenas"] = [{"tipo": "concepto", "titulo": d.get("titulo", ""), "texto": d.get("guion_voz") or fallback}]
@@ -413,7 +457,7 @@ class GitHubBackend:
                          headers={"Accept": "application/vnd.github.raw"})
         if st.ok:
             s = st.json()
-            return {"state": s["state"], "step": "Completado" if s["state"] == "ok" else "Error", "log": s.get("log", ""), "run_url": run["html_url"]}
+            return {"state": s["state"], "step": "Completado" if s["state"] == "ok" else "Error", "log": s.get("log", ""), "files": s.get("files", []), "run_url": run["html_url"]}
         return {"state": "running" if run["conclusion"] == "success" else "error", "step": run["conclusion"], "run_url": run["html_url"]}
 
     def download(self, jid, dest):
@@ -424,6 +468,13 @@ class GitHubBackend:
         with open(dest, "wb") as f:
             for chunk in r.iter_content(1 << 16):
                 f.write(chunk)
+
+    def download_file(self, jid, name, dest):
+        r = self.gh.s.get(f"https://api.github.com/repos/{self.repo}/contents/{name}", params={"ref": f"render-{jid}"},
+                          headers={"Accept": "application/vnd.github.raw"}, timeout=120)
+        if not r.ok:
+            raise RuntimeError(f"No se pudo descargar {name} ({r.status_code})")
+        open(dest, "wb").write(r.content)
 
     def cleanup(self, jid):
         self.gh.req("DELETE", f"/repos/{self.repo}/git/refs/heads/render-{jid}", ok=False)
@@ -456,6 +507,12 @@ class ProxyBackend:
         with open(dest, "wb") as f:
             for chunk in r.iter_content(1 << 16):
                 f.write(chunk)
+
+    def download_file(self, jid, name, dest):
+        r = requests.get(f"{self.url}/api/jobs/{jid}/file/{name}", headers=self.h, timeout=120)
+        if not r.ok:
+            raise RuntimeError(f"No se pudo descargar {name}")
+        open(dest, "wb").write(r.content)
 
     def cleanup(self, jid):
         try:
@@ -493,6 +550,15 @@ def render_job(profile, job, audio_path, progress):
     if st["state"] == "error":
         raise RuntimeError("El render falló. " + (st.get("run_url") or "") + "\n" + (st.get("log") or "")[-1500:])
     os.makedirs(VIDEOS_DIR, exist_ok=True)
+    if job.get("salida") == "carrusel":
+        folder = os.path.join(VIDEOS_DIR, "Carruseles", re.sub(r"[^\wáéíóúñÁÉÍÓÚÑ-]+", "_", job.get("titulo") or "carrusel")[:40] + "_" + jid)
+        os.makedirs(folder, exist_ok=True)
+        files = st.get("files") or []
+        for k, f in enumerate(files, 1):
+            progress(f"⬇️ Descargando {f} ({k}/{len(files)})…")
+            be.download_file(jid, f, os.path.join(folder, f))
+        be.cleanup(jid)
+        return folder
     name = re.sub(r"[^\wáéíóúñÁÉÍÓÚÑ-]+", "_", job.get("titulo") or "video")[:40] + f"_{job['formato'].replace(':', 'x')}_{jid}.mp4"
     dest = os.path.join(VIDEOS_DIR, name)
     progress("⬇️ Descargando MP4…")
@@ -501,13 +567,23 @@ def render_job(profile, job, audio_path, progress):
     return dest
 
 
+def cta_of(p):
+    return " — ".join(x for x in (p.get("ctaTexto") or "Información en mi perfil", p.get("ctaBoton") or "") if x)
+
+
+def save_copies(p, job, dest):
+    o = gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), wrap_prompt(copies_prompt(job.get("guion_voz", ""), job.get("titulo", ""), cta_of(p)), "copies", "gemini"))
+    open(os.path.splitext(dest)[0] + "_redes.txt", "w", encoding="utf-8").write(copies_text(o))
+    return o
+
+
 def make_job(data, formato, fps, voz, velocidad, plantilla, estilo="osciloscopio", extras=None):
     job = json.loads(json.dumps(data))
     job.update({"id": "ad" + format(int(time.time() * 1000), "x"), "formato": formato, "fps": int(fps), "voz": voz,
                 "velocidad": velocidad, "plantilla": plantilla, "estilo": estilo,
                 "modo": "claude" if job.get("codigo_escenas") else "libre" if job.get("codigo_libre") else "plantilla",
                 "created": datetime.now().isoformat(timespec="seconds")})
-    if estilo == "pastillas":
+    if estilo in PAST_FAM:
         ex = extras or {}
         job.update({"categoria": ex.get("categoria") or "DIAGNÓSTICO AUTOMOTRIZ", "categoria_portada": ex.get("categoriaPortada") or "DIAGNÓSTICO AUTOMOTRIZ",
                     "cta_texto": ex.get("ctaTexto") or "Información en mi perfil", "cta_boton": ex.get("ctaBoton") or "", "subtitulos": False})
@@ -545,6 +621,7 @@ class App(ctk.CTk):
         self.tabs.pack(fill="both", expand=True, padx=12, pady=(0, 12))
         self._studio(self.tabs.add("🎬 Estudio de Creación"))
         self._batch(self.tabs.add("📊 Lote desde Excel"))
+        self._social(self.tabs.add("📣 Redes y revisión"))
         self._accounts(self.tabs.add("⚙️ Configurar Cuentas"))
         self.load_profile_into_ui()
         if not (self.P().get("geminiOk") and self.P().get("cloudReady")):
@@ -726,6 +803,10 @@ class App(ctk.CTk):
         self.label(col, "ESTILO VISUAL").pack(fill="x")
         self.style_var = ctk.StringVar(value=list(ESTILOS)[0])
         ctk.CTkOptionMenu(col, values=list(ESTILOS), variable=self.style_var, fg_color=C["panel2"], button_color=C["panel"], font=self.F).pack(fill="x")
+        col = ctk.CTkFrame(row3, fg_color="transparent"); col.pack(side="left", fill="x", expand=True, padx=6)
+        self.label(col, "CÁMARA").pack(fill="x")
+        self.cam_var = ctk.StringVar(value=list(CAMARAS)[0])
+        ctk.CTkOptionMenu(col, values=list(CAMARAS), variable=self.cam_var, fg_color=C["panel2"], button_color=C["panel"], font=self.F).pack(fill="x")
         col = ctk.CTkFrame(row3, fg_color="transparent"); col.pack(side="left", padx=6)
         self.label(col, "VOZ REAL (EDGE-TTS)").pack(fill="x")
         self.btn(col, "🔊 Probar voz", self.test_voice, "cy").pack(fill="x")
@@ -775,6 +856,8 @@ class App(ctk.CTk):
         self.btn(brow, "📋 Copiar guion", self.copy_guion).pack(side="left", padx=(0, 6))
         brow2 = ctk.CTkFrame(left, fg_color="transparent")
         brow2.pack(fill="x", pady=(0, 8))
+        self.ia_var = ctk.StringVar(value=list(IAS)[0])
+        ctk.CTkOptionMenu(brow2, values=list(IAS), variable=self.ia_var, fg_color=C["panel2"], button_color=C["panel"], font=self.F, width=220).pack(side="left", padx=(0, 6))
         self.btn(brow2, "🤖 Generar prompt (desde Guion)", self.copy_scene_prompt, "cy").pack(side="left", padx=(0, 6))
         self.btn(brow2, "✅ Aplicar escenas pegadas", self.apply_scenes, "cy").pack(side="left", padx=6)
         self.btn(brow, "⬇️ Guardar HTML HyperFrames", self.save_html).pack(side="left", padx=6)
@@ -789,7 +872,9 @@ class App(ctk.CTk):
         self.prog.set(0)
         self.r_status = ctk.CTkLabel(right, text="Listo para renderizar", font=self.FM, text_color=C["text"], wraplength=380, justify="left")
         self.r_status.pack(fill="x", padx=16, pady=6)
-        self.btn(right, "📂 Abrir carpeta Videos_Listos", self.open_videos).pack(fill="x", padx=16, pady=(20, 8))
+        self.copies_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(right, text="📝 Guardar textos para redes (.txt) junto al MP4\n(usa tu llave de Gemini)", variable=self.copies_var, font=self.F).pack(anchor="w", padx=16, pady=6)
+        self.btn(right, "📂 Abrir carpeta Videos_Listos", self.open_videos).pack(fill="x", padx=16, pady=(14, 8))
 
     def past_fields(self):
         return {k: e.get().strip() for k, e in getattr(self, "past_entries", {}).items()}
@@ -801,7 +886,7 @@ class App(ctk.CTk):
         self.save()
 
     def toggle_past(self):
-        if ESTILOS.get(self.style_var.get()) == "pastillas":
+        if ESTILOS.get(self.style_var.get()) in PAST_FAM:
             self.past_frame.pack(fill="x", pady=4, after=self.past_anchor)
         else:
             self.past_frame.pack_forget()
@@ -841,6 +926,8 @@ class App(ctk.CTk):
 
     def _with_sfx(self, job):
         job["sonido"] = bool(self.sfx_var.get())
+        if CAMARAS.get(self.cam_var.get()):
+            job["camara"] = CAMARAS[self.cam_var.get()]
         return job
 
     def show_data(self, d):
@@ -867,7 +954,7 @@ class App(ctk.CTk):
         def work():
             try:
                 d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"),
-                                              build_prompt(idea, TEMPLATES[self.tpl_var.get()], self.exact_var.get(), self.fmt_var.get(), ESTILOS[self.style_var.get()])), idea)
+                                              wrap_prompt(build_prompt(idea, TEMPLATES[self.tpl_var.get()], self.exact_var.get(), self.fmt_var.get(), ESTILOS[self.style_var.get()]), "escenas", "gemini")), idea)
                 self.ui(self.show_data, d)
                 self.ui(lambda: self.gen_status.configure(text=f"✅ Listo: {len(d['escenas'])} escenas", text_color=C["green"]))
                 self.ui(self.preview)
@@ -900,7 +987,7 @@ class App(ctk.CTk):
         if not texto:
             return messagebox.showwarning(APP_NAME, "Pega primero tu texto narrado en la casilla GUION DE VOZ")
         self.clipboard_clear()
-        self.clipboard_append(build_prompt(texto, TEMPLATES[self.tpl_var.get()], True, self.fmt_var.get(), ESTILOS[self.style_var.get()]))
+        self.clipboard_append(wrap_prompt(build_prompt(texto, TEMPLATES[self.tpl_var.get()], True, self.fmt_var.get(), ESTILOS[self.style_var.get()]), "escenas", IAS[self.ia_var.get()]))
         self.r_status.configure(text="🤖 Prompt copiado. Pégalo en Claude o Gemini y pega su respuesta en ESCENAS.", text_color=C["cyan"])
 
     def test_voice(self):
@@ -952,7 +1039,15 @@ class App(ctk.CTk):
         def work():
             try:
                 dest = render_job(p, job, self.audio_path, lambda s: self.ui(lambda: self.r_status.configure(text=s)))
-                self.ui(lambda: self.r_status.configure(text=f"✅ Guardado en Videos_Listos:\n{os.path.basename(dest)}", text_color=C["green"]))
+                extra = ""
+                if self.copies_var.get() and p.get("geminiKey"):
+                    try:
+                        self.ui(lambda: self.r_status.configure(text="📝 Escribiendo textos para redes…"))
+                        save_copies(p, job, dest)
+                        extra = "\n+ textos para redes (.txt)"
+                    except Exception as e:
+                        extra = f"\n(textos no generados: {e})"
+                self.ui(lambda: self.r_status.configure(text=f"✅ Guardado en Videos_Listos:\n{os.path.basename(dest)}{extra}", text_color=C["green"]))
             except Exception as e:
                 self.ui(lambda: self.r_status.configure(text=f"❌ {e}", text_color=C["red"]))
             self.ui(lambda: (self.prog.stop(), self.prog.configure(mode="determinate"), self.prog.set(1)))
@@ -1033,9 +1128,10 @@ class App(ctk.CTk):
         if not p.get("geminiKey"):
             return messagebox.showwarning(APP_NAME, "Configura Gemini en ⚙️ Configurar Cuentas")
         voz, rate, fps, est, sfx = VOICES[self.voice_var.get()], RATES[self.rate_var.get()], self.fps_var.get(), ESTILOS[self.style_var.get()], bool(self.sfx_var.get())
-        self.thread(lambda: self._batch_worker(p, voz, rate, fps, est, sfx))
+        copies = bool(self.copies_var.get())
+        self.thread(lambda: self._batch_worker(p, voz, rate, fps, est, sfx, copies))
 
-    def _batch_worker(self, p, voz, rate, fps, est="osciloscopio", sfx=True):
+    def _batch_worker(self, p, voz, rate, fps, est="osciloscopio", sfx=True, copies=True):
         path = self.excel_path
         is_csv = path.lower().endswith(".csv")
         try:
@@ -1089,13 +1185,18 @@ class App(ctk.CTk):
                 try:
                     setv(r, "Estado", "⏳ Generando guion…")
                     idea = guion if guion else tema
-                    d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), build_prompt(idea, tpl, bool(guion), fmt, est)), idea)
+                    d = normalize(gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), wrap_prompt(build_prompt(idea, tpl, bool(guion), fmt, est), "escenas", "gemini")), idea)
                     self.blog(f"   ✔ Guion: {len(d['guion_voz'].split())} palabras, {len(d['escenas'])} escenas")
                     job = make_job(d, fmt, fps, voz, rate, tpl, est, p)
                     job["sonido"] = sfx
                     setv(r, "Estado", "⏳ Renderizando…")
                     dest = render_job(p, job, None, lambda s: self.blog("   " + s) if ("Descargando" in s or "Enviando" in s) else None)
                     setv(r, "Archivo_MP4", dest)
+                    if copies and p.get("geminiKey"):
+                        try:
+                            save_copies(p, job, dest)
+                        except Exception as e:
+                            self.blog(f"   ⚠ textos para redes: {e}")
                     setv(r, "Estado", "✅ Completado")
                     self.blog(f"   ✅ {os.path.basename(dest)}")
                 except Exception as e:
@@ -1105,6 +1206,190 @@ class App(ctk.CTk):
             self.blog("\n🏁 Lote terminado. Videos en: " + VIDEOS_DIR)
         except Exception as e:
             self.blog(f"❌ No se pudo procesar el archivo: {e}")
+
+    # ------------------------------------------------------------- Redes y revisión
+    def _social(self, tab):
+        sc = ctk.CTkScrollableFrame(tab, fg_color="transparent")
+        sc.pack(fill="both", expand=True)
+
+        def card(title):
+            f = ctk.CTkFrame(sc, fg_color=C["panel2"], corner_radius=14, border_color=C["border"], border_width=1)
+            f.pack(fill="x", pady=8, padx=4)
+            ctk.CTkLabel(f, text=title, font=self.FB, text_color=C["text"], anchor="w").pack(fill="x", padx=14, pady=(12, 4))
+            return f
+
+        def box(parent, h=120, mono=True):
+            t = ctk.CTkTextbox(parent, height=h, font=self.FM if mono else self.F, fg_color="#050A12", text_color="#C9D6EA")
+            t.pack(fill="x", padx=14, pady=4)
+            self.enable_clipboard(t)
+            return t
+
+        ctk.CTkLabel(sc, text="Los botones ▶ usan tu llave de Gemini. Los botones 📋 copian el prompt para la IA elegida en el Estudio (Claude, ChatGPT, DeepSeek, Kimi o universal); pega su respuesta en la casilla y pulsa Mostrar/Aplicar.",
+                     font=self.F, text_color=C["dim"], wraplength=1000, justify="left").pack(fill="x", padx=6, pady=4)
+        # Revisión técnica
+        f = card("🔎 Revisión técnica del guion (antes de renderizar)")
+        r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14)
+        self.btn(r, "▶ Revisar con Gemini", lambda: self.asist_gemini("revision"), "pri").pack(side="left")
+        self.btn(r, "📋 Copiar prompt", lambda: self.asist_prompt("revision"), "cy").pack(side="left", padx=6)
+        self.rev_in = box(f, 100)
+        r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14)
+        self.btn(r, "Mostrar resultado", lambda: self.asist_show("revision")).pack(side="left")
+        self.btn(r, "✅ Usar guion corregido", self.rev_apply, "cy").pack(side="left", padx=6)
+        self.rev_out = box(f, 160, False)
+        # Textos para redes
+        f = card("📝 Textos para TikTok, Instagram y Facebook")
+        r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14)
+        self.btn(r, "▶ Generar con Gemini", lambda: self.asist_gemini("copies"), "pri").pack(side="left")
+        self.btn(r, "📋 Copiar prompt", lambda: self.asist_prompt("copies"), "cy").pack(side="left", padx=6)
+        self.cp_in = box(f, 100)
+        r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14)
+        self.btn(r, "Mostrar textos", lambda: self.asist_show("copies")).pack(side="left")
+        self.btn(r, "⬇️ Guardar .txt", self.copies_save).pack(side="left", padx=6)
+        self.cp_out = box(f, 220, False)
+        # Carrusel
+        f = card("🖼️ Carrusel para Instagram y Facebook (4:5, 1080x1350)")
+        self.label(f, "TEMA (vacío = usa el guion del Estudio)").pack(fill="x", padx=14)
+        self.car_tema = box(f, 70, False)
+        r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14, pady=4)
+        self.car_n = ctk.StringVar(value="8")
+        ctk.CTkOptionMenu(r, values=["6", "8", "10"], variable=self.car_n, width=80, fg_color=C["panel"], font=self.F).pack(side="left")
+        self.car_est = ctk.StringVar(value="Pastillas azul")
+        ctk.CTkOptionMenu(r, values=["Pastillas azul", "Isométrico premium", "Isométrico 3D técnico"], variable=self.car_est, width=220, fg_color=C["panel"], font=self.F).pack(side="left", padx=6)
+        self.btn(r, "▶ Generar con Gemini", lambda: self.asist_gemini("carrusel"), "pri").pack(side="left", padx=6)
+        self.btn(r, "📋 Copiar prompt", lambda: self.asist_prompt("carrusel"), "cy").pack(side="left")
+        self.car_in = box(f, 140)
+        r = ctk.CTkFrame(f, fg_color="transparent"); r.pack(fill="x", padx=14, pady=(0, 12))
+        self.btn(r, "👁 Vista previa", self.car_preview, "cy").pack(side="left")
+        self.btn(r, "☁️ Generar imágenes y copy", self.car_render, "pri").pack(side="left", padx=6)
+        self.car_status = ctk.CTkLabel(r, text="", font=self.FM, text_color=C["dim"], anchor="w")
+        self.car_status.pack(side="left", padx=8)
+
+    def _guion_actual(self):
+        g = self.guion.get("1.0", "end").strip() or (self.data or {}).get("guion_voz", "")
+        if not g:
+            raise RuntimeError("No hay guion en el Estudio")
+        return g
+
+    def _asist_prompt_body(self, kind):
+        p = self.P()
+        if kind == "revision":
+            return revision_prompt(self._guion_actual(), (self.data or {}).get("escenas", []))
+        if kind == "copies":
+            return copies_prompt(self._guion_actual(), self.titulo.get().strip() or (self.data or {}).get("titulo", ""), cta_of(p))
+        tema = self.car_tema.get("1.0", "end").strip() or self._guion_actual()
+        return carrusel_prompt(tema, self.car_n.get(), self._car_estilo(), p.get("categoria") or "DIAGNÓSTICO AUTOMOTRIZ", cta_of(p))
+
+    def _car_estilo(self):
+        return {"Pastillas azul": "pastillas", "Isométrico premium": "isometrico", "Isométrico 3D técnico": "isometrico3d"}[self.car_est.get()]
+
+    def _asist_box(self, kind):
+        return {"revision": self.rev_in, "copies": self.cp_in, "carrusel": self.car_in}[kind]
+
+    def asist_prompt(self, kind):
+        try:
+            txt = wrap_prompt(self._asist_prompt_body(kind), kind, IAS[self.ia_var.get()])
+        except Exception as e:
+            return messagebox.showwarning(APP_NAME, str(e))
+        self.clipboard_clear(); self.clipboard_append(txt)
+        messagebox.showinfo(APP_NAME, f"Prompt copiado ({self.ia_var.get()}). Pégalo en la IA y pega aquí su respuesta.")
+
+    def asist_gemini(self, kind):
+        p = self.P()
+        if not p.get("geminiKey"):
+            return messagebox.showwarning(APP_NAME, "Configura tu llave de Gemini en ⚙️ Configurar Cuentas")
+        try:
+            body = wrap_prompt(self._asist_prompt_body(kind), kind, "gemini")
+        except Exception as e:
+            return messagebox.showwarning(APP_NAME, str(e))
+        b = self._asist_box(kind)
+        b.delete("1.0", "end"); b.insert("1.0", "⏳ Gemini está trabajando…")
+
+        def work():
+            try:
+                o = gemini_generate(p["geminiKey"], p.get("model", "gemini-2.5-flash"), body)
+                self.ui(lambda: (b.delete("1.0", "end"), b.insert("1.0", json.dumps(o, ensure_ascii=False, indent=2)), self.asist_show(kind)))
+            except Exception as e:
+                self.ui(lambda: (b.delete("1.0", "end"), b.insert("1.0", f"❌ {e}")))
+        self.thread(work)
+
+    def asist_show(self, kind):
+        try:
+            o = parse_scenes_text(self._asist_box(kind).get("1.0", "end"))
+        except Exception as e:
+            return messagebox.showwarning(APP_NAME, f"Respuesta inválida: {e}")
+        if kind == "revision":
+            self.rev_data = o
+            lines = ["✅ Sin problemas técnicos" if o.get("veredicto") == "ok" else "⚠️ Hay puntos a corregir", ""]
+            for i, pr in enumerate(o.get("problemas", []), 1):
+                lines += [f"{i}. «{pr.get('frase', '')}»", f"   ✗ {pr.get('problema', '')}", f"   ✓ {pr.get('correccion', '')}", ""]
+            if o.get("notas"):
+                lines.append(o["notas"])
+            self.rev_out.delete("1.0", "end"); self.rev_out.insert("1.0", "\n".join(lines))
+        elif kind == "copies":
+            self.copies_data = o
+            self.cp_out.delete("1.0", "end"); self.cp_out.insert("1.0", copies_text(o))
+        else:
+            self.car_data = o
+            n = len(o.get("escenas", []))
+            self.car_status.configure(text=f"✅ {n} diapositivas listas. Pulsa Vista previa o Generar imágenes.")
+
+    def rev_apply(self):
+        o = getattr(self, "rev_data", None)
+        if not o or not o.get("guion_corregido"):
+            return messagebox.showwarning(APP_NAME, "Primero muestra un resultado con guion corregido")
+        self.guion.delete("1.0", "end"); self.guion.insert("1.0", o["guion_corregido"])
+        self.tabs.set("🎬 Estudio de Creación")
+        messagebox.showinfo(APP_NAME, "Guion corregido aplicado. Vuelve a generar las escenas o el prompt.")
+
+    def copies_save(self):
+        o = getattr(self, "copies_data", None)
+        if not o:
+            return messagebox.showwarning(APP_NAME, "Primero genera o muestra los textos")
+        path = filedialog.asksaveasfilename(defaultextension=".txt", initialfile="textos_redes.txt", initialdir=VIDEOS_DIR if os.path.isdir(VIDEOS_DIR) else None)
+        if path:
+            open(path, "w", encoding="utf-8").write(copies_text(o))
+
+    def _car_job(self):
+        o = getattr(self, "car_data", None)
+        if not o:
+            self.asist_show("carrusel"); o = getattr(self, "car_data", None)
+        if not o:
+            raise RuntimeError("Primero genera o pega el carrusel")
+        p = self.P()
+        esc = [e for e in o.get("escenas", []) if e]
+        for e in esc:
+            e.setdefault("tipo", "concepto"); e.setdefault("datos", {}); e.setdefault("texto", "")
+        return {"id": "car" + format(int(time.time() * 1000), "x"), "salida": "carrusel", "formato": "4:5", "estilo": self._car_estilo(),
+                "titulo": o.get("titulo") or (esc[0].get("titulo") if esc else "carrusel"), "categoria": p.get("categoria") or "DIAGNÓSTICO AUTOMOTRIZ",
+                "categoria_portada": p.get("categoriaPortada") or "DIAGNÓSTICO AUTOMOTRIZ", "cta_texto": p.get("ctaTexto") or "Información en mi perfil",
+                "cta_boton": p.get("ctaBoton") or "", "escenas": esc, "copy": o.get("copy", {}), "codigo_escenas": o.get("codigo_escenas", "")}
+
+    def car_preview(self):
+        try:
+            job = self._car_job()
+        except Exception as e:
+            return messagebox.showwarning(APP_NAME, str(e))
+        path = os.path.join(tempfile.gettempdir(), "autodiag_carrusel.html")
+        open(path, "w", encoding="utf-8").write(build_html(job, None, preview=True))
+        webbrowser.open("file:///" + path.replace("\\", "/"))
+
+    def car_render(self):
+        try:
+            job = self._car_job()
+        except Exception as e:
+            return messagebox.showwarning(APP_NAME, str(e))
+        p = dict(self.P())
+
+        def work():
+            try:
+                folder = render_job(p, job, None, lambda s: self.ui(lambda: self.car_status.configure(text=s)))
+                self.ui(lambda: self.car_status.configure(text=f"✅ Listo en {folder}", text_color=C["green"]))
+                if os.name == "nt":
+                    os.startfile(folder)
+            except Exception as e:
+                self.ui(lambda: self.car_status.configure(text=f"❌ {e}", text_color=C["red"]))
+        self.car_status.configure(text="⏳ Enviando a la nube…", text_color=C["text"])
+        self.thread(work)
 
     # ------------------------------------------------------------- Cuentas
     def _accounts(self, tab):

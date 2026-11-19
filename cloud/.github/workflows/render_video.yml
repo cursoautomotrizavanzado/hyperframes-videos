@@ -53,19 +53,21 @@ jobs:
           AUDIO=""
           if [ -f "jobs/${JOB_ID}.mp3" ]; then AUDIO="jobs/${JOB_ID}.mp3"; fi
           bash render/pipeline.sh "jobs/${JOB_ID}.json" out "$AUDIO" 2>&1 | tee out/log.txt
-          test -s out/final.mp4
+          test -s out/final.mp4 || test -s out/carrusel_01.png
 
       - name: Publicar resultado en la rama render-<id>
         if: always()
         run: |
           STATE="error"
-          if [ -s out/final.mp4 ]; then STATE="ok"; fi
+          if [ -s out/final.mp4 ] || [ -s out/carrusel_01.png ]; then STATE="ok"; fi
           mkdir -p pub
           [ -s out/final.mp4 ] && cp out/final.mp4 pub/final.mp4
+          cp out/carrusel_*.png out/copy.txt pub/ 2>/dev/null || true
+          FILES=$(cat out/files.json 2>/dev/null || echo '[]')
           [ -s out/portada.jpg ] && cp out/portada.jpg pub/portada.jpg
           [ -s out/timeline.json ] && cp out/timeline.json pub/timeline.json
           LOGTAIL=$( (tail -n 40 out/log.txt 2>/dev/null || echo "sin log") | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))')
-          echo "{\"id\":\"${JOB_ID}\",\"state\":\"${STATE}\",\"log\":${LOGTAIL}}" > pub/status.json
+          echo "{\"id\":\"${JOB_ID}\",\"state\":\"${STATE}\",\"files\":${FILES},\"log\":${LOGTAIL}}" > pub/status.json
           cd pub
           git init -q -b "render-${JOB_ID}"
           git config user.name "autodiag-bot"

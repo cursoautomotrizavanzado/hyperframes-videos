@@ -6,6 +6,15 @@ JOB="$1"; OUT="$2"; AUDIO="${3:-}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$OUT"
 FPS=$(node -e "const j=require(require('path').resolve('$JOB'));console.log(j.fps||60)")
+SALIDA=$(node -e "const j=require(require('path').resolve('$JOB'));console.log(j.salida||'video')")
+if [ "$SALIDA" = "carrusel" ]; then
+  echo "::group::Carrusel: composición e imágenes"
+  node "$HERE/build_composition.js" "$JOB" - "$OUT/project"
+  node "$HERE/slides.js" "$OUT/project/index.html" "$JOB" "$OUT"
+  echo "::endgroup::"
+  ls -la "$OUT"/carrusel_*.png
+  exit 0
+fi
 echo "::group::1/4 Voz y marcas de tiempo"
 python3 "$HERE/prepare_audio.py" "$JOB" "$OUT" "$AUDIO"
 echo "::endgroup::"

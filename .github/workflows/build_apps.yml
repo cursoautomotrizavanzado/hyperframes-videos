@@ -129,8 +129,11 @@ jobs:
           pip install -q edge-tts
           mkdir -p out
           bash render/pipeline.sh ../tools/test_job.json out 2>&1 | tee out/log.txt
-          cp out/final.mp4 ../demo_modo_claude_9x16.mp4
+          cp out/final.mp4 ../demo_isometrico_9x16.mp4
           cp out/timeline.json ../demo_timeline.json
+          mkdir -p outc && bash render/pipeline.sh ../tools/test_carrusel.json outc 2>&1 | tail -5
+          for f in outc/carrusel_*.png; do cp "$f" "../demo_$(basename $f)"; done
+          cp outc/copy.txt ../demo_carrusel_copy.txt || true
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: demo, path: "demo_*\ncloud/out/log.txt" }

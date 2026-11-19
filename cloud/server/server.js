@@ -54,7 +54,9 @@ app.post("/api/jobs", (req, res) => {
 app.get("/api/jobs/:id", (req, res) => {
   const j = jobs.get(req.params.id);
   if (!j) return res.status(404).json({ error: "No existe" });
-  res.json({ id: req.params.id, state: j.state, step: j.step, log: j.log.slice(-4000) });
+  let files = [];
+  try { files = JSON.parse(fs.readFileSync(path.join(j.dir, "out", "files.json"), "utf8")); } catch (e) {}
+  res.json({ id: req.params.id, state: j.state, step: j.step, files, log: j.log.slice(-4000) });
 });
 
 app.get("/api/jobs/:id/video", (req, res) => {
@@ -63,6 +65,14 @@ app.get("/api/jobs/:id/video", (req, res) => {
   if (!f || !fs.existsSync(f)) return res.status(404).json({ error: "Video no disponible" });
   res.set("Content-Type", "video/mp4");
   res.set("Content-Disposition", `attachment; filename="${req.params.id}.mp4"`);
+  fs.createReadStream(f).pipe(res);
+});
+
+app.get("/api/jobs/:id/file/:name", (req, res) => {
+  const j = jobs.get(req.params.id), name = String(req.params.name).replace(/[^\w.-]/g, "");
+  const f = j && path.join(j.dir, "out", name);
+  if (!f || !fs.existsSync(f)) return res.status(404).json({ error: "Archivo no disponible" });
+  res.set("Content-Type", name.endsWith(".png") ? "image/png" : "text/plain; charset=utf-8");
   fs.createReadStream(f).pipe(res);
 });
 
@@ -94,7 +104,7 @@ function pump() {
   p.stdout.on("data", onData);
   p.stderr.on("data", onData);
   p.on("close", (code) => {
-    j.state = code === 0 && fs.existsSync(path.join(j.dir, "out", "final.mp4")) ? "ok" : "error";
+    j.state = code === 0 && (fs.existsSync(path.join(j.dir, "out", "final.mp4")) || fs.existsSync(path.join(j.dir, "out", "carrusel_01.png"))) ? "ok" : "error";
     j.step = j.state === "ok" ? "Completado" : "Error";
     busy = false;
     pump();

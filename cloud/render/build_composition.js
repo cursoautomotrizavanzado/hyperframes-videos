@@ -12,7 +12,7 @@ function safeJson(obj) {
 function buildHtml(template, job, timeline, opts) {
   opts = opts || {};
   const wide = job.formato === "16:9";
-  const W = wide ? 1920 : 1080, H = wide ? 1080 : 1920;
+  const W = wide ? 1920 : 1080, H = wide ? 1080 : job.formato === "4:5" ? 1350 : 1920;
   const duration = timeline && timeline.duration ? Number(timeline.duration).toFixed(3) : "10";
   const libre = (String(job.codigo_libre || "") + "\n" + String(job.codigo_escenas || "")).replace(/<\/script/gi, "<\\/script");
   return template
@@ -35,7 +35,7 @@ if (require.main === module) {
     process.exit(2);
   }
   const job = JSON.parse(fs.readFileSync(jobPath, "utf8"));
-  const tl = JSON.parse(fs.readFileSync(tlPath, "utf8"));
+  const tl = tlPath === "-" ? null : JSON.parse(fs.readFileSync(tlPath, "utf8"));
   const tpl = fs.readFileSync(path.join(__dirname, "engine.html"), "utf8");
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, "index.html"), buildHtml(tpl, job, tl));
@@ -48,5 +48,5 @@ if (require.main === module) {
     fs.mkdirSync(path.join(outDir, "fonts"), { recursive: true });
     for (const w of [500, 600, 700, 800]) fs.copyFileSync(path.join(fdir, `poppins-latin-${w}-normal.woff2`), path.join(outDir, "fonts", `poppins-latin-${w}-normal.woff2`));
   } catch (e) { console.warn("[build] Poppins no disponible:", e.message); }
-  console.log(`[build] composición lista: ${path.join(outDir, "index.html")} (${tl.duration}s, ${job.formato})`);
+  console.log(`[build] composición lista: ${path.join(outDir, "index.html")} (${tl ? tl.duration + "s" : "carrusel"}, ${job.formato})`);
 }

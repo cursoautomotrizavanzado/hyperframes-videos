@@ -79,6 +79,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
   </div>
   <div class="tabs">
     <button data-tab="studio" class="act">🎬 Estudio de Creación</button>
+    <button data-tab="social">📣 Redes y revisión</button>
     <button data-tab="accounts">⚙️ Cuentas y Auto-Instalador</button>
   </div>
 </header>
@@ -120,7 +121,8 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
           <div><label>Velocidad</label>
             <select id="rate"><option value="-5%">Pausada</option><option value="+0%">Normal</option><option value="+8%" selected>Ágil (reels)</option><option value="+15%">Rápida</option></select></div>
           <div><label>Estilo visual</label>
-            <select id="estilo"><option value="osciloscopio">Osciloscopio Pro (oscuro)</option><option value="blueprint">Blueprint técnico (azul)</option><option value="carbono">Carbono (negro mate)</option><option value="neon">Neón (morado)</option><option value="claro">Taller claro (fondo blanco)</option><option value="pastillas">Pastillas azul (sin subtítulos)</option></select></div>
+            <select id="estilo"><option value="osciloscopio">Osciloscopio Pro (oscuro)</option><option value="blueprint">Blueprint técnico (azul)</option><option value="carbono">Carbono (negro mate)</option><option value="neon">Neón (morado)</option><option value="claro">Taller claro (fondo blanco)</option><option value="pastillas">Pastillas azul (sin subtítulos)</option><option value="isometrico">Isométrico premium (sin subtítulos)</option><option value="isometrico3d">Isométrico 3D técnico (sin subtítulos)</option></select></div>
+          <div><label>Cámara</label><select id="camara"><option value="">Automática</option><option value="dinamica">Dinámica (zoom y acercamientos)</option><option value="suave">Suave (deslizar)</option><option value="ninguna">Sin movimiento</option></select></div>
           <div><label>FPS</label><select id="fps"><option value="60" selected>60</option><option value="30">30 (más rápido)</option></select></div>
         </div>
         <div id="pastBox" style="display:none">
@@ -152,7 +154,7 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
           <button class="b" id="btnSpeak">🔊 Voz de prueba</button>
           <button class="b" id="btnHtml">⬇️ HTML HyperFrames</button>
         </div>
-        <div class="row" style="margin-top:8px"><button class="b cy" id="btnPromptCopy">🤖 Generar prompt (desde Guion)</button></div>
+        <div class="row" style="margin-top:8px"><select id="iaDest" style="flex:0 1 210px"><option value="universal">Prompt universal (cualquier IA)</option><option value="claude">Para Claude</option><option value="gemini">Para Gemini</option><option value="chatgpt">Para ChatGPT</option><option value="deepseek">Para DeepSeek</option><option value="kimi">Para Kimi</option></select><button class="b cy" id="btnPromptCopy">🤖 Generar prompt (desde Guion)</button></div>
         <details><summary>Escenas (JSON — pega aquí la respuesta de Claude/Gemini)</summary>
           <textarea class="code" id="scenesJson" spellcheck="false"></textarea>
           <div class="row"><button class="b cy" id="btnApplyJson">✅ Aplicar escenas pegadas</button></div>
@@ -175,6 +177,42 @@ details summary{cursor:pointer;color:var(--d);font:700 12px var(--mono);margin:1
         <div class="log" id="rLog"></div>
         <div class="hist" id="hist"></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REDES Y REVISIÓN ================= -->
+<section class="view" id="v-social">
+  <div class="grid">
+    <div class="card">
+      <h2>🔎 Revisión técnica del guion</h2>
+      <p class="hint">Revisa errores técnicos, valores dudosos y frases difíciles antes de renderizar. Usa el guion de 🎬 Estudio. Con "IA destino" elige para qué IA se copia el prompt.</p>
+      <div class="row" style="margin-top:8px"><button class="b pri" id="btnRevGem">▶ Revisar con Gemini</button><button class="b cy" id="btnRevPrompt">📋 Copiar prompt</button></div>
+      <label>Respuesta de la IA (pégala aquí si usaste el prompt)</label>
+      <textarea class="code" id="revTxt" style="min-height:110px"></textarea>
+      <div class="row"><button class="b" id="btnRevShow">Mostrar resultado</button><button class="b cy" id="btnRevApply">✅ Usar guion corregido</button></div>
+      <div id="revOut" class="log" style="max-height:none"></div>
+    </div>
+    <div class="card">
+      <h2>📝 Textos para TikTok, Instagram y Facebook</h2>
+      <div class="row" style="margin-top:8px"><button class="b pri" id="btnCopyGem">▶ Generar con Gemini</button><button class="b cy" id="btnCopyPrompt">📋 Copiar prompt</button></div>
+      <label>Respuesta de la IA</label>
+      <textarea class="code" id="copyTxt" style="min-height:110px"></textarea>
+      <div class="row"><button class="b" id="btnCopyShow">Mostrar textos</button><button class="b" id="btnCopySave">⬇️ Guardar .txt</button></div>
+      <div id="copyOut"></div>
+    </div>
+    <div class="card">
+      <h2>🖼️ Carrusel para Instagram y Facebook (4:5)</h2>
+      <label>Tema del carrusel</label>
+      <textarea id="carTema" placeholder="Si lo dejas vacío se usa el guion del Estudio"></textarea>
+      <div class="row"><div><label>Diapositivas</label><select id="carN"><option>6</option><option selected>8</option><option>10</option></select></div>
+        <div><label>Estilo</label><select id="carEstilo"><option value="pastillas">Pastillas azul</option><option value="isometrico">Isométrico premium</option><option value="isometrico3d">Isométrico 3D técnico</option></select></div></div>
+      <div class="row" style="margin-top:8px"><button class="b pri" id="btnCarGem">▶ Generar con Gemini</button><button class="b cy" id="btnCarPrompt">📋 Copiar prompt</button></div>
+      <label>Respuesta de la IA (JSON del carrusel)</label>
+      <textarea class="code" id="carTxt" style="min-height:110px"></textarea>
+      <div class="row"><button class="b" id="btnCarShow">👁 Ver diapositivas</button><button class="b pri" id="btnCarSave">⬇️ Descargar imágenes y copy</button></div>
+      <div id="carThumbs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:10px"></div>
+      <div id="carCopy"></div>
     </div>
   </div>
 </section>
@@ -272,7 +310,8 @@ function openExternal(url) {
   try { if (window.app && app.OpenUrl) return app.OpenUrl(url); } catch (e) {}
   window.open(url, "_blank", "noopener");
 }
-async function saveFile(name, blob) {
+async function saveFile(name, blob, opts) {
+  opts = opts || {};
   // 1) APK (Capacitor): guarda en Documentos/AutoDiag y ofrece compartir
   const Cap = window.Capacitor && Capacitor.Plugins;
   if (Cap && Cap.Filesystem) {
@@ -280,7 +319,7 @@ async function saveFile(name, blob) {
     let uri;
     try { const r = await Cap.Filesystem.writeFile({ path: "AutoDiag/" + name, data, directory: "DOCUMENTS", recursive: true }); uri = r.uri; toast("Guardado en Documentos/AutoDiag/" + name, 5000); }
     catch (e) { const r = await Cap.Filesystem.writeFile({ path: name, data, directory: "CACHE" }); uri = r.uri; }
-    try { if (Cap.Share) await Cap.Share.share({ title: name, url: uri, dialogTitle: "Guardar o compartir video" }); } catch (e) {}
+    try { if (Cap.Share && !opts.noShare) await Cap.Share.share({ title: name, url: uri, dialogTitle: "Guardar o compartir" }); } catch (e) {}
     return;
   }
   // 2) DroidScript
@@ -330,7 +369,7 @@ function renderProfiles() {
   $("ghPrivate").value = p.private === false ? "0" : "1"; $("backend").value = p.backend || "github"; $("pxUrl").value = p.proxyUrl || ""; $("pxKey").value = p.proxyKey || "";
   if (p.models && p.models.length) fillModels(p.models); if (p.model) $("gModel").value = p.model;
   $("estilo").value = p.estilo || "osciloscopio"; $("categoria").value = p.categoria || ""; $("categoriaPortada").value = p.categoriaPortada || ""; $("ctaTexto").value = p.ctaTexto || ""; $("ctaBoton").value = p.ctaBoton || "";
-  $("pastBox").style.display = $("estilo").value === "pastillas" ? "block" : "none";
+  $("pastBox").style.display = PAST_FAM.includes($("estilo").value) ? "block" : "none"; $("iaDest").value = p.iaDest || "universal";
   $("proxyBox").style.display = $("backend").value === "proxy" ? "block" : "none";
   refreshLeds(); renderHistory();
 }
@@ -394,7 +433,15 @@ const TPL_HELP = {
   libre: 'datos: {} y además el campo raíz "codigo_libre" (ver abajo)',
 };
 const PAST_TXT = 'ESTILO PASTILLAS (obligatorio en este video): cada escena DEBE incluir además "pastillas": 1 a 3 objetos {"texto":"idea clave dicha en esa escena, máx 40 caracteres","color":"verde|blanco|cian|rojo|ambar|azul"} y "resumen": frase corta de máx 32 caracteres que resume la escena. "titulo" máx 32 caracteres. La ÚLTIMA escena es de tipo "cierre" (su "titulo" es la conclusión en una frase).\nTipos de escena disponibles en este estilo (elige el que ilustre literalmente lo narrado):\n- inyector_retorno → datos: {"riel":true|false,"deposito":true|false,"flujo":"normal|exceso","etiquetas_laterales":[{"texto":"HOLGURAS INTERNAS","color":"verde"}],"manometro":{"valor":0.25,"etiqueta":"PRESIÓN DEL RIEL","alerta":"¡SE DESPERDICIA!"},"retorno_texto":"RETORNO"}\n- manometro → datos: {"valor":0.0-1.0,"etiqueta":"PRESIÓN DEL RIEL","alerta":"texto opcional"}\n- probetas → datos: {"multiplicador":"× 8","items":[{"etiqueta":"INYECTOR 1","valor":"3 cm³","nivel":0.1,"alerta":false}]} (1 a 6 probetas; nivel 0-1 proporcional al valor)\n- lista → datos: {"encabezado":"SI TODOS ESTÁN ALTOS, REVISA:","items":[{"titulo":"PRESIÓN DEL RIEL","detalle":"NO MAYOR A LA PEDIDA"}]} (máx 4)\n- manual → datos: {"titulo":"MANUAL DEL FABRICANTE","nota":"texto corto opcional"}\n- lupa → datos: {"etiqueta":"UNIÓN","detalle":"texto corto opcional"}\n- lineas → datos: {"lineas":[{"etiqueta":"RIEL - ALTA PRESIÓN","tipo":"alta"},{"etiqueta":"RETORNO - BAJA PRESIÓN","tipo":"baja"}]}\n- tarjeta → datos: {"color":"verde","lineas":[{"texto":"PRIMERO","color":"blanco"},{"texto":"CONECTA LAS MANGUERAS","color":"blanco"},{"texto":"ANTES DE ARRANCAR","color":"verde"}]}\n- osciloscopio, pwm, rele, pinout → mismos datos de arriba\n- cierre → datos: {}';
+const PAST_FAM = ["pastillas", "isometrico", "isometrico3d"];
+const PR = () => { try { return JSON.parse((window.CLOUD_FILES || {})["render/prompts.json"] || "{}"); } catch (e) { return {}; } };
+function wrapPrompt(body, kind, ia) {
+  const pr = PR(); ia = ia || ($("iaDest") && $("iaDest").value) || "universal";
+  return [pr.exigencia || "", (pr.ias || {})[ia] || (pr.ias || {}).universal || "", "", body, "", ((pr.verificacion || {})[kind] || "")].join("\n");
+}
 const ESTILO_DESC = {
+  isometrico: "Isométrico premium — ilustración isométrica 2D sobre fondo azul muy oscuro con rejilla isométrica blueprint tenue y viñeta; piezas metálicas con degradado, cortes en modo fantasma cian, partículas de flujo (ámbar entrada/falla, cian señal, rojo calor), etiquetas holográficas. Usa info.P y las funciones iso de info.lib.",
+  isometrico3d: "Isométrico 3D técnico — piezas isométricas sólidas con sombreado metálico, suelo oscuro con rejilla azul tipo plano técnico, cortes seccionados con partículas (cian combustible, ámbar retorno/fuga), instrumentos con bisel metálico e insignias verdes. Usa info.P y las funciones iso de info.lib.",
   pastillas: "Pastillas azul — fondo azul marino, ilustración flat de línea limpia (trazos cian/azul de 4-6 px, rellenos muy suaves), acentos ámbar, rojo para fallas. Usa info.P.",
   osciloscopio: "Osciloscopio Pro — fondo oscuro técnico #080D16, cian #00E5FF, naranja #F76015, rojo +12V, verde masa, amarillo control. Usa info.C = {orange,cyan,red,green,yellow,text,dim,panel,panel2}.",
   blueprint: "Blueprint técnico — azul plano, líneas blancas/cian finas tipo plano técnico, acento ámbar. Usa info.C.",
@@ -403,16 +450,17 @@ const ESTILO_DESC = {
 };
 function claudePrompt(idea, exact, formato, estilo) {
   const tplTxt = (window.CLOUD_FILES || {})["render/prompt_modo_claude.txt"] || "";
-  const wide = formato === "16:9", past = estilo === "pastillas";
+  const wide = formato === "16:9", past = PAST_FAM.includes(estilo);
   const dims = past ? (wide ? [1180, 770] : [960, 680]) : (wide ? [1272, 766] : [872, 726]);
   return tplTxt.split("{{TEXTO}}").join(idea).split("{{FORMATO}}").join(wide ? "horizontal 16:9 (1920x1080, cursos)" : "vertical 9:16 (1080x1920, Reels/TikTok)")
     .split("{{ESTILO}}").join(ESTILO_DESC[estilo] || ESTILO_DESC.osciloscopio).split("{{RW}}").join(dims[0]).split("{{RH}}").join(dims[1])
+    .split("{{ISO}}").join(/^isometrico/.test(estilo) ? PR().iso_claude : "")
     .split("{{EXACTO}}").join(exact ? "(úsalo EXACTO: no cambies ni una palabra)" : "(si es solo una idea, escribe tú el guion de 60 a 90 segundos, técnico y natural, y úsalo en los campos texto)");
 }
 function buildPrompt(idea, tpl, exact, formato, estilo) {
   estilo = estilo || ($("estilo") && $("estilo").value) || "osciloscopio";
   if (tpl === "claude") return claudePrompt(idea, exact, formato, estilo);
-  const past = estilo === "pastillas";
+  const past = PAST_FAM.includes(estilo);
   const tipos = tpl === "auto" ? "Elige para cada escena el tipo que mejor ilustre literalmente lo narrado: concepto, osciloscopio, pwm, rele, pinout." :
     tpl === "libre" ? 'Usa el tipo "libre" en las escenas técnicas (y "concepto" donde convenga).' :
     `La plantilla principal es "${tpl}": úsala en la mayoría de escenas técnicas; puedes usar "concepto" en introducción y cierre.`;
@@ -451,7 +499,7 @@ async function callGemini(prompt) {
 function normalize(d, exactText) {
   d.escenas = (d.escenas || []).filter((s) => s && s.texto);
   if (!d.escenas.length) d.escenas = [{ tipo: "concepto", titulo: d.titulo || "", texto: d.guion_voz || exactText || "" }];
-  d.escenas.forEach((s) => { s.tipo = ["concepto", "osciloscopio", "pwm", "rele", "pinout", "libre", "inyector_retorno", "manometro", "probetas", "lista", "manual", "lupa", "lineas", "tarjeta", "cierre"].includes(s.tipo) ? s.tipo : "concepto"; s.datos = s.datos || {}; s.badges = (s.badges || []).slice(0, 4); });
+  d.escenas.forEach((s) => { s.tipo = ["concepto", "osciloscopio", "pwm", "rele", "pinout", "libre", "inyector_retorno", "manometro", "probetas", "lista", "manual", "lupa", "lineas", "tarjeta", "cierre", "portada"].includes(s.tipo) ? s.tipo : "concepto"; s.datos = s.datos || {}; s.badges = (s.badges || []).slice(0, 4); });
   d.guion_voz = d.escenas.map((s) => s.texto.trim()).join(" ");
   return d;
 }
@@ -461,7 +509,7 @@ let DATA = null;
 const ENGINE = (window.CLOUD_FILES || {})["render/engine.html"] || "";
 function safeJson(o) { return JSON.stringify(o).replace(/</g, "\\u003c"); }
 function buildHtml(job, timeline, preview) {
-  const wide = job.formato === "16:9", W = wide ? 1920 : 1080, H = wide ? 1080 : 1920;
+  const wide = job.formato === "16:9", W = wide ? 1920 : 1080, H = wide ? 1080 : job.formato === "4:5" ? 1350 : 1920;
   const dur = timeline && timeline.duration ? Number(timeline.duration).toFixed(3) : "10";
   return ENGINE.split("__W__").join(W).split("__H__").join(H).split("__DURATION__").join(dur).split("__FPS__").join(job.fps || 60)
     .replace("/*__JOB__*/null", safeJson(job)).replace("/*__TIMELINE__*/null", timeline ? safeJson(timeline) : "null")
@@ -480,8 +528,8 @@ function collectJob() {
   if (!DATA) return null;
   const job = JSON.parse(JSON.stringify(DATA));
   job.formato = FORMATO; job.fps = +$("fps").value; job.voz = $("voice").value; job.velocidad = $("rate").value;
-  job.titulo = $("titulo").value.trim() || job.titulo; job.plantilla = $("tpl").value; job.estilo = $("estilo").value;
-  if (job.estilo === "pastillas") { job.categoria = $("categoria").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.categoria_portada = $("categoriaPortada").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.cta_texto = $("ctaTexto").value.trim() || "Información en mi perfil"; job.cta_boton = $("ctaBoton").value.trim(); job.subtitulos = false; } job.modo = job.codigo_escenas ? "claude" : job.codigo_libre ? "libre" : "plantilla"; job.sonido = $("sonido").checked;
+  job.titulo = $("titulo").value.trim() || job.titulo; job.plantilla = $("tpl").value; job.estilo = $("estilo").value; if ($("camara").value) job.camara = $("camara").value;
+  if (PAST_FAM.includes(job.estilo)) { job.categoria = $("categoria").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.categoria_portada = $("categoriaPortada").value.trim() || "DIAGNÓSTICO AUTOMOTRIZ"; job.cta_texto = $("ctaTexto").value.trim() || "Información en mi perfil"; job.cta_boton = $("ctaBoton").value.trim(); job.subtitulos = false; } job.modo = job.codigo_escenas ? "claude" : job.codigo_libre ? "libre" : "plantilla"; job.sonido = $("sonido").checked;
   const g = $("guion").value.trim();
   if (g && g !== job.guion_voz) { // el usuario editó el guion: re-repartir palabras entre escenas
     const words = g.split(/\s+/), counts = job.escenas.map((s) => s.texto.split(/\s+/).length), tot = counts.reduce((a, b) => a + b, 0); let k = 0;
@@ -507,7 +555,7 @@ function showData(d) {
 $("btnGen").onclick = async () => {
   const idea = $("idea").value.trim(); if (!idea) return toast("Escribe la idea o pega tu guion");
   const btn = $("btnGen"); btn.disabled = true; const st = $("genStatus"); st.style.display = "flex"; setStatus(st, "wait", "Gemini está escribiendo el guion y diseñando las escenas…");
-  try { const d = normalize(await callGemini(buildPrompt(idea, $("tpl").value, $("exact").checked, FORMATO)), idea); showData(d); setStatus(st, "ok", "✅ Listo: " + d.escenas.length + " escenas"); }
+  try { const d = normalize(await callGemini(wrapPrompt(buildPrompt(idea, $("tpl").value, $("exact").checked, FORMATO), "escenas", "gemini")), idea); showData(d); setStatus(st, "ok", "✅ Listo: " + d.escenas.length + " escenas"); }
   catch (e) { setStatus(st, "", "❌ " + e.message); toast("❌ " + e.message, 6000); }
   btn.disabled = false;
 };
@@ -520,13 +568,14 @@ function parseScenes(txt) {
 }
 $("btnPromptCopy").onclick = async () => {
   const t = $("guion").value.trim() || $("idea").value.trim(); if (!t) return toast("Pega primero tu texto narrado en la casilla Guion");
-  const pr = buildPrompt(t, $("tpl").value, true, FORMATO);
-  document.querySelector("details").open = true;
-  toast((await copyText(pr)) ? "🤖 Prompt copiado: pégalo en Claude o Gemini y pega su respuesta en Escenas" : "No se pudo copiar el prompt", 5000);
+  const pr = wrapPrompt(buildPrompt(t, $("tpl").value, true, FORMATO), "escenas");
+  document.querySelector("details").open = true; savePastFields();
+  toast((await copyText(pr)) ? "🤖 Prompt copiado: pégalo en la IA elegida y pega su respuesta en Escenas" : "No se pudo copiar el prompt", 5000);
 };
 $("btnApplyJson").onclick = () => { try { const o = parseScenes($("scenesJson").value); DATA = normalize(Object.assign({}, DATA || {}, o)); $("guion").value = DATA.guion_voz; if (o.titulo) $("titulo").value = o.titulo; updatePreview(); toast("Aplicado"); } catch (e) { toast("JSON inválido: " + e.message); } };
-$("guion").addEventListener("change", updatePreview); $("estilo").addEventListener("change", () => { $("pastBox").style.display = $("estilo").value === "pastillas" ? "block" : "none"; savePastFields(); updatePreview(); });
-function savePastFields() { const p = P(); p.estilo = $("estilo").value; p.categoria = $("categoria").value; p.categoriaPortada = $("categoriaPortada").value; p.ctaTexto = $("ctaTexto").value; p.ctaBoton = $("ctaBoton").value; persist(); }
+$("guion").addEventListener("change", updatePreview); $("estilo").addEventListener("change", () => { $("pastBox").style.display = PAST_FAM.includes($("estilo").value) ? "block" : "none"; savePastFields(); updatePreview(); });
+$("camara").addEventListener("change", updatePreview); $("iaDest").addEventListener("change", savePastFields);
+function savePastFields() { const p = P(); p.estilo = $("estilo").value; p.iaDest = $("iaDest").value; p.categoria = $("categoria").value; p.categoriaPortada = $("categoriaPortada").value; p.ctaTexto = $("ctaTexto").value; p.ctaBoton = $("ctaBoton").value; persist(); }
 ["categoria", "categoriaPortada", "ctaTexto", "ctaBoton"].forEach((id) => $(id).addEventListener("change", () => { savePastFields(); updatePreview(); })); $("titulo").addEventListener("change", updatePreview);
 $("btnCopyGuion").onclick = async () => { const t = $("guion").value.trim(); if (!t) return toast("El guion está vacío"); toast((await copyText(t)) ? "Guion copiado" : "No se pudo copiar"); };
 $("btnSpeak").onclick = () => {
@@ -665,6 +714,71 @@ document.querySelectorAll("[data-paste]").forEach((b) => b.onclick = async () =>
   catch (e) { el.type = "text"; el.focus(); el.select(); toast("Mantén el dedo sobre la casilla y elige «Pegar» (o Ctrl+V)", 5000); }
 });
 document.querySelectorAll("[data-eye]").forEach((b) => b.onclick = () => { const el = $(b.dataset.eye); el.type = el.type === "password" ? "text" : "password"; });
+
+/* ======================= Redes y revisión ======================= */
+function guionActual() { return ($("guion").value || "").trim() || (DATA && DATA.guion_voz) || ""; }
+function ctaActual() { const p = P(); return [p.ctaTexto || "Información en mi perfil", p.ctaBoton || ""].filter(Boolean).join(" — "); }
+function revPrompt() { const g = guionActual(); if (!g) throw new Error("No hay guion en el Estudio");
+  return PR().revision.split("{{GUION}}").join(g).split("{{ESCENAS}}").join(JSON.stringify((DATA && DATA.escenas || []).map((x) => ({ titulo: x.titulo, texto: x.texto, badges: x.badges, pastillas: x.pastillas, datos: x.datos })))); }
+function copiesPrompt() { const g = guionActual(); if (!g) throw new Error("No hay guion en el Estudio");
+  return PR().copies.split("{{GUION}}").join(g).split("{{TITULO}}").join($("titulo").value || (DATA && DATA.titulo) || "").split("{{CTA}}").join(ctaActual()); }
+function carPrompt() { const tema = $("carTema").value.trim() || guionActual(); if (!tema) throw new Error("Escribe el tema del carrusel");
+  const est = $("carEstilo").value, pr = PR();
+  return pr.carrusel.split("{{TEMA}}").join(tema).split("{{N}}").join($("carN").value).split("{{ESTILO}}").join(ESTILO_DESC[est] || est)
+    .split("{{CATEGORIA}}").join(P().categoria || "DIAGNÓSTICO AUTOMOTRIZ").split("{{CTA}}").join(ctaActual()).split("{{CATALOGO}}").join(pr.catalogo || "").split("{{CLAUDE}}").join(""); }
+async function runAsist(btn, kind, build, area, after) {
+  btn.disabled = true; try { const o = await callGemini(wrapPrompt(build(), kind, "gemini")); $(area).value = JSON.stringify(o, null, 2); after(o); toast("✅ Listo"); }
+  catch (e) { toast("❌ " + e.message, 6000); } btn.disabled = false;
+}
+async function copyAsist(kind, build) { try { const ok = await copyText(wrapPrompt(build(), kind)); toast(ok ? "📋 Prompt copiado: pégalo en tu IA y pega aquí su respuesta" : "No se pudo copiar", 5000); } catch (e) { toast("❌ " + e.message); } }
+const esc = (x) => String(x == null ? "" : x).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+let REV = null, COPIES = null, CAR = null;
+function showRev(o) { REV = o; const L = $("revOut"); L.style.display = "block";
+  L.innerHTML = `<b style="color:${o.veredicto === "ok" ? "var(--g)" : "var(--o)"}">${o.veredicto === "ok" ? "✅ Sin problemas técnicos" : "⚠️ Hay puntos a corregir"}</b>\n\n` +
+    (o.problemas || []).map((p, i) => `${i + 1}. «${esc(p.frase)}»\n   ✗ ${esc(p.problema)}\n   ✓ ${esc(p.correccion)}`).join("\n\n") + (o.notas ? "\n\n" + esc(o.notas) : ""); }
+$("btnRevGem").onclick = () => runAsist($("btnRevGem"), "revision", revPrompt, "revTxt", showRev);
+$("btnRevPrompt").onclick = () => copyAsist("revision", revPrompt);
+$("btnRevShow").onclick = () => { try { showRev(parseScenes($("revTxt").value)); } catch (e) { toast("Respuesta inválida: " + e.message); } };
+$("btnRevApply").onclick = () => { if (!REV || !REV.guion_corregido) return toast("Primero muestra un resultado con guion corregido");
+  $("guion").value = REV.guion_corregido; $("guion").dispatchEvent(new Event("change")); document.querySelector('[data-tab="studio"]').click(); toast("Guion corregido aplicado"); };
+function copiesText(o) { return ["tiktok", "instagram", "facebook"].filter((r) => o[r]).map((r) => `=== ${r.toUpperCase()} ===\n${o[r].gancho || ""}\n\n${o[r].descripcion || ""}\n\n${o[r].hashtags || ""}`).join("\n\n"); }
+function showCopies(o, box) { COPIES = o; const el = $(box || "copyOut"); el.innerHTML = "";
+  ["tiktok", "instagram", "facebook"].filter((r) => o[r]).forEach((r) => { const t = `${o[r].gancho || ""}\n\n${o[r].descripcion || ""}\n\n${o[r].hashtags || ""}`;
+    const d = document.createElement("div"); d.className = "log"; d.style.display = "block"; d.style.maxHeight = "none"; d.textContent = r.toUpperCase() + "\n\n" + t;
+    const b = document.createElement("button"); b.className = "b cy"; b.textContent = "📋 Copiar " + r; b.style.marginTop = "6px"; b.onclick = async () => toast((await copyText(t)) ? "Copiado" : "No se pudo copiar");
+    el.appendChild(d); el.appendChild(b); }); }
+$("btnCopyGem").onclick = () => runAsist($("btnCopyGem"), "copies", copiesPrompt, "copyTxt", (o) => showCopies(o));
+$("btnCopyPrompt").onclick = () => copyAsist("copies", copiesPrompt);
+$("btnCopyShow").onclick = () => { try { showCopies(parseScenes($("copyTxt").value)); } catch (e) { toast("Respuesta inválida: " + e.message); } };
+$("btnCopySave").onclick = () => { if (!COPIES) return toast("Primero genera o muestra los textos"); saveFile(((DATA && DATA.titulo) || "textos").replace(/[^\wáéíóúñÁÉÍÓÚÑ-]+/g, "_").slice(0, 40) + "_redes.txt", new Blob([copiesText(COPIES)], { type: "text/plain" })); };
+// ---- Carrusel: se dibuja aquí mismo (sin nube) a 1080x1350
+function carJob(o) { const p = P(), esc2 = (o.escenas || []).filter(Boolean);
+  esc2.forEach((x) => { x.tipo = x.tipo || "concepto"; x.datos = x.datos || {}; x.texto = x.texto || ""; });
+  return { id: "car" + Date.now().toString(36), salida: "carrusel", formato: "4:5", estilo: $("carEstilo").value, titulo: o.titulo || (esc2[0] && esc2[0].titulo) || "",
+    categoria: p.categoria || "DIAGNÓSTICO AUTOMOTRIZ", categoria_portada: p.categoriaPortada || "DIAGNÓSTICO AUTOMOTRIZ", cta_texto: p.ctaTexto || "Información en mi perfil", cta_boton: p.ctaBoton || "",
+    escenas: esc2, copy: o.copy || {}, codigo_escenas: o.codigo_escenas || "" }; }
+async function renderSlides(job) {
+  const fr = document.createElement("iframe"); fr.style.cssText = "position:fixed;left:-3000px;top:0;width:1080px;height:1350px;border:0"; document.body.appendChild(fr);
+  await new Promise((r) => { fr.onload = r; fr.srcdoc = buildHtml(job, null, false).replace('<script src="gsap.min.js"></scr' + 'ipt>', ""); });
+  const w = fr.contentWindow; try { await w.document.fonts.ready; } catch (e) {} await sleep(300);
+  const out = []; const n = (w.__AD && w.__AD.timeline.scenes.length) || job.escenas.length;
+  for (let i = 0; i < n; i++) { w.__render(i * 2 + 1.9); out.push(w.document.getElementById("c").toDataURL("image/png")); }
+  fr.remove(); return out;
+}
+let CAR_IMGS = [];
+async function showCar(o) { CAR = carJob(o); $("carThumbs").innerHTML = "⏳ Dibujando…"; CAR_IMGS = await renderSlides(CAR);
+  $("carThumbs").innerHTML = CAR_IMGS.map((u, i) => `<img src="${u}" alt="Diapositiva ${i + 1}" style="width:100%;border-radius:8px;border:1px solid var(--b)">`).join("");
+  showCopies(CAR.copy || {}, "carCopy"); }
+$("btnCarGem").onclick = () => runAsist($("btnCarGem"), "carrusel", carPrompt, "carTxt", showCar);
+$("btnCarPrompt").onclick = () => copyAsist("carrusel", carPrompt);
+$("btnCarShow").onclick = async () => { try { await showCar(parseScenes($("carTxt").value)); } catch (e) { toast("Respuesta inválida: " + e.message); } };
+$("btnCarSave").onclick = async () => {
+  if (!CAR_IMGS.length) { try { await showCar(parseScenes($("carTxt").value)); } catch (e) { return toast("Primero genera o pega el carrusel"); } }
+  const base = (CAR.titulo || "carrusel").replace(/[^\wáéíóúñÁÉÍÓÚÑ-]+/g, "_").slice(0, 30);
+  for (let i = 0; i < CAR_IMGS.length; i++) { const b = await (await fetch(CAR_IMGS[i])).blob(); await saveFile(`${base}_${String(i + 1).padStart(2, "0")}.png`, b, { noShare: true }); await sleep(400); }
+  const t = copiesText(CAR.copy || {}); if (t.trim()) await saveFile(`${base}_copy.txt`, new Blob([t], { type: "text/plain" }), { noShare: true });
+  toast(`✅ ${CAR_IMGS.length} imágenes guardadas`, 5000);
+};
 
 /* ======================= Arranque ======================= */
 (async () => {

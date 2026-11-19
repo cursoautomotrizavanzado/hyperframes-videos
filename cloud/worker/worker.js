@@ -80,6 +80,12 @@ export default {
     if (url.pathname === "/" || url.pathname === "/health") return json({ ok: true, service: "autodiag-worker", repo: env.GITHUB_REPO });
     if (!env.APP_KEY || req.headers.get("X-App-Key") !== env.APP_KEY) return json({ error: "X-App-Key inválida" }, 401);
     const G = gh(env);
+    const fm = url.pathname.match(/^\/api\/jobs\/([\w-]+)\/file\/([\w.-]+)$/);
+    if (fm && req.method === "GET") {
+      const r = await G.raw(fm[2], `render-${fm[1]}`);
+      if (!r.ok) return json({ error: "Archivo no disponible" }, 404);
+      return new Response(r.body, { headers: { ...CORS, "Content-Type": fm[2].endsWith(".png") ? "image/png" : "text/plain; charset=utf-8" } });
+    }
     const m = url.pathname.match(/^\/api\/jobs(?:\/([\w-]+))?(\/video)?$/);
     if (!m) return json({ error: "Ruta no encontrada" }, 404);
     const id = m[1];
@@ -105,7 +111,7 @@ export default {
         if (!run) return json({ id, state: "queued", step: "Esperando a GitHub Actions" });
         if (run.status !== "completed") return json({ id, state: "running", step: (await G.currentStep(run.id)) || run.status, run_url: run.html_url });
         const st = await G.raw("status.json", `render-${id}`);
-        if (st.ok) { const s = await st.json(); return json({ id, state: s.state, step: s.state === "ok" ? "Completado" : "Error", log: s.log, run_url: run.html_url }); }
+        if (st.ok) { const s = await st.json(); return json({ id, state: s.state, step: s.state === "ok" ? "Completado" : "Error", log: s.log, files: s.files || [], run_url: run.html_url }); }
         return json({ id, state: run.conclusion === "success" ? "running" : "error", step: run.conclusion, run_url: run.html_url });
       }
       if (req.method === "DELETE" && id) {
