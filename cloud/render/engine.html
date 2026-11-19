@@ -194,9 +194,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     return r;
   }); }
   // estado de una ficha: a = opacidad, act = cuánto está "en foco" (0-1), s = escala
-  function focus(i, t0, local) {
+  function focus(i, t0, local, ghost) {
     if (t0 == null) return { a: 1, act: 0, s: 1 };
-    if (local < t0) return { a: 0, act: 0, s: 0.86 };
+    if (local < t0) return { a: ghost && FOCO ? 0.16 * easeOut(local / 0.4) : 0, act: 0, s: 1, ghost: true };
     var p = clamp((local - t0) / 0.3, 0, 1), a = easeOut(p), all = (FT[i] || {}).all || [], nx = null;
     for (var q = 0; q < all.length; q++) if (all[q] > t0 + 0.02) { nx = all[q]; break; }
     var act = !FOCO ? 0 : (nx == null || local < nx) ? 1 : clamp(1 - (local - nx) / 0.3, 0, 1);
@@ -317,7 +317,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (progress < 1) { var hx = g.x + n; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(hx, g.y + g.h / 2 - (fn(n / g.w * windowMs) / vdiv + offsetDiv) * divH, 7, 0, 7); ctx.fill(); }
     ctx.restore();
   }
-  function sweep(local) { var cyc = local % 7; return clamp(cyc / 1.8, 0, 1); }
+  function sweep(local) { return clamp(local / 1.8, 0, 1); }
+  function roll(local, win) { return local > 1.8 ? (local - 1.8) * win * 0.22 : 0; } // desplazamiento continuo tipo "roll" (ms)
   function chLabel(g, i, txt, color) { font(WIDE ? 22 : 24, 700, MONO); var x = g.x + i * (g.w / 2); rr(x, g.y + g.h + 22, 18, 18, 4); ctx.fillStyle = color; ctx.fill(); text(txt, x + 28, g.y + g.h + 39, C.text); }
 
   function drawOsciloscopio(sc, r, local) {
@@ -348,7 +349,8 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     else if (senal === "ckp_hall") chans.push({ fn: ckpHall, v: 2, off: -1.2, c: C.cyan, l: "CKP Hall 2 V/div" });
     else chans.push({ fn: ckpInd, v: niceV(vpp / 6), off: senal === "ckp_cmp" ? 1.6 : 0, c: C.cyan, l: "CKP " + niceV(vpp / 6) + " V/div" });
     if (senal === "ckp_cmp") chans.push({ fn: cmpHall, v: 5, off: -3.2, c: C.yellow, l: "CMP 5 V/div" });
-    chans.forEach(function (ch, i) { trace(g, ch.fn, win, ch.v, ch.off, ch.c, prog); chLabel(g, i, ch.l, ch.c); });
+    var sh = d.resaltar ? 0 : roll(local, win);
+    chans.forEach(function (ch, i) { trace(g, function (tms) { return ch.fn(tms + sh); }, win, ch.v, ch.off, ch.c, prog); chLabel(g, i, ch.l, ch.c); });
     font(WIDE ? 22 : 24, 700, MONO); text(msdiv + " ms/div · " + Math.round(rpm) + " RPM", g.x + g.w, r.y + 38, C.dim, "right");
     if (d.resaltar === "diente_faltante" && senal.indexOf("cmp") !== 0 && prog > 0.6) {
       var a = clamp((prog - 0.6) / 0.25, 0, 1), xg = 0.55 * g.w, wg = (pitch * miss / winDeg) * g.w * 1.25;
@@ -388,10 +390,10 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       var f = num(d.frecuencia_hz, 100), duty = clamp(num(d.duty, 40) / (num(d.duty, 40) > 1 ? 100 : 1), 0, 1), per = 1000 / f;
       var md = d.escala_ms ? num(d.escala_ms, 1) : niceDiv(per * 0.38), w2 = md * 10;
       var fn = function (tms) { return ((tms % per) / per) < duty ? V : 0.15; };
-      var vd2 = niceV(V / 3.2); trace(g, fn, w2, vd2, -1.8, C.yellow, prog);
+      var sh2 = roll(local, w2), vd2 = niceV(V / 3.2); trace(g, function (tms) { return fn(tms + sh2); }, w2, vd2, -1.8, C.yellow, prog);
       chLabel(g, 0, "CH1 " + vd2 + " V/div", C.yellow); font(WIDE ? 22 : 24, 700, MONO); text(md + " ms/div · " + f + " Hz", g.x + g.w, r.y + 38, C.dim, "right");
       if (prog > .5) { var a2 = clamp((prog - .5) / .2, 0, 1), x1 = g.x + g.w * 0.1, ww = (duty * per / w2) * g.w, yy = g.y + g.h / 2 - (V / vd2 - 1.8) * g.h / 8 - 26;
-        var xs = g.x + Math.ceil(0.1 * w2 / per) * per / w2 * g.w; x1 = xs;
+        var xs = g.x + (Math.ceil((0.1 * w2 + sh2) / per) * per - sh2) / w2 * g.w; x1 = xs;
         ctx.save(); ctx.globalAlpha = a2; glowLine(C.orange, 3, 8); ctx.beginPath(); ctx.moveTo(x1, yy); ctx.lineTo(x1 + ww, yy); ctx.stroke();
         font(WIDE ? 26 : 30, 800, MONO); text("DUTY " + Math.round(duty * 100) + "%", x1 + ww / 2, yy - 14, C.orange, "center"); ctx.restore(); }
     }
@@ -488,7 +490,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (!pts.length) pts = [sc.titulo || "Concepto"];
     var gap = 22, h = Math.min(130, (r.h - 100 - gap * (pts.length - 1)) / pts.length), dur = Math.max(1, (TL.scenes[SC.indexOf(sc)] || {}).end - (TL.scenes[SC.indexOf(sc)] || {}).start || 4);
     pts.forEach(function (p, i) {
-      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local), a = ff.a; if (a <= 0) return;
+      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local, true), a = ff.a; if (a <= 0) return;
       var y = r.y + 80 + i * (h + gap), x = r.x + 30 + (1 - Math.min(1, a / 0.42)) * 60;
       ctx.save(); ctx.globalAlpha = a; rr(x, y, r.w - 60, h, 14); ctx.fillStyle = C.panel2; ctx.fill(); glow(i % 2 ? C.cyan : C.orange, ff.act); ctx.strokeStyle = i % 2 ? C.cyan : C.orange; ctx.lineWidth = 3 + 2 * ff.act; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = i % 2 ? C.cyan : C.orange; ctx.beginPath(); ctx.arc(x + 46, y + h / 2, 18, 0, 7); ctx.fill();
@@ -506,7 +508,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var cols = WIDE ? 1 : Math.min(bs.length, 2), rows = Math.ceil(bs.length / cols), gap = 18;
     var bw = (r.w - gap * (cols - 1)) / cols, bh = WIDE ? Math.min(190, (r.h - gap * (rows - 1)) / rows) : (r.h - gap * (rows - 1)) / rows;
     bs.forEach(function (b, i) {
-      var ii = SC.indexOf(sc), ff = focus(ii, (FT[ii] || { b: [] }).b[i], local), a = ff.a, t0b = ff.t0 == null ? 0.25 + i * 0.22 : ff.t0; if (a <= 0) return;
+      var ii = SC.indexOf(sc), ff = focus(ii, (FT[ii] || { b: [] }).b[i], local, true), a = ff.a, t0b = ff.t0 == null ? 0.25 + i * 0.22 : ff.t0; if (a <= 0) return;
       var col = TIPO_COLOR[String(b.tipo || "").toLowerCase()] || C.cyan, x = r.x + (i % cols) * (bw + gap), y = r.y + Math.floor(i / cols) * (bh + gap);
       ctx.save(); ctx.globalAlpha = a; ctx.translate(0, (1 - Math.min(1, a / 0.42)) * 30);
       rr(x, y, bw, bh, 16); ctx.fillStyle = C.panel; ctx.fill(); glow(col, ff.act); ctx.strokeStyle = ff.act > 0.05 ? col : C.border; ctx.lineWidth = 2 + 2 * ff.act; ctx.stroke(); ctx.shadowBlur = 0;
@@ -691,7 +693,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     }
     side.slice(0, 3).forEach(function (lb, i) {
       var txt = typeof lb === "string" ? lb : lb.texto, col = pcol(lb.color, i ? P.cyan : P.green), bw = R.w * 0.36, bh = R.h * 0.11, by = injTop + injH * 0.25 + i * bh * 1.35, bx = R.x + 10;
-      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local), a = ff.a; ctx.save(); glow(col, ff.act); pbox(bx, by, bw, bh, col, a); ctx.restore(); ctx.save(); ctx.globalAlpha *= a; plabel(txt, bx + bw / 2, by + bh / 2, P.white, Math.round(bh * 0.28)); ctx.restore();
+      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local, true), a = ff.a; ctx.save(); glow(col, ff.act); pbox(bx, by, bw, bh, col, a); ctx.restore(); ctx.save(); ctx.globalAlpha *= a; plabel(txt, bx + bw / 2, by + bh / 2, P.white, Math.round(bh * 0.28)); ctx.restore();
       ctx.save(); ctx.globalAlpha *= a; stroke([[bx + bw, by + bh / 2], [inj.left[0], by + bh / 2]], col, 4, 1); ctx.restore();
     });
     var rx = hasGauge ? injX + R.w * 0.14 : R.x + R.w * 0.86, retY = inj.top[1];
@@ -711,10 +713,10 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var d = sc.datos || {}, items = (d.items || d.probetas || []).slice(0, 6); if (!items.length) items = [{ etiqueta: "1", nivel: .2 }, { etiqueta: "2", nivel: .2 }];
     var n = items.length, gap = R.w / n, tw = Math.min(110, gap * 0.48), th = R.h * 0.62, top = R.y + R.h * 0.1;
     items.forEach(function (it, i) {
-      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local), cx = R.x + gap * (i + .5), x = cx - tw / 2, a = Math.max(ff.a, FOCO ? 0 : 0), alert = it.alerta === true || it.alerta === "true", col = alert ? P.red : "#C99A2E";
+      var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local, true), cx = R.x + gap * (i + .5), x = cx - tw / 2, a = Math.max(ff.a, FOCO ? 0 : 0), alert = it.alerta === true || it.alerta === "true", col = alert ? P.red : "#C99A2E";
       ctx.save(); ctx.globalAlpha *= a; glow(alert ? P.red : P.cyan, ff.act); rr(x, top, tw, th, 10); ctx.fillStyle = "rgba(141,180,255,.05)"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#B9CCF0"; ctx.stroke();
       ctx.strokeStyle = "rgba(185,204,240,.6)"; ctx.lineWidth = 2; for (var k = 1; k <= 5; k++) { var yy = top + th * k / 6; ctx.beginPath(); ctx.moveTo(x + 8, yy); ctx.lineTo(x + tw * 0.32, yy); ctx.stroke(); }
-      ctx.shadowBlur = 0; var lvl = clamp(num(it.nivel, 0.12), 0, 1) * easeOut((local - (ff.t0 == null ? 0.4 + i * 0.15 : ff.t0 + 0.1)) / 1.2), fh = (th - 12) * lvl;
+      ctx.shadowBlur = 0; var lvl = ff.ghost ? 0 : clamp(num(it.nivel, 0.12), 0, 1) * easeOut((local - (ff.t0 == null ? 0.4 + i * 0.15 : ff.t0 + 0.1)) / 1.2), fh = (th - 12) * lvl;
       ctx.fillStyle = col; rr(x + 6, top + th - 6 - fh, tw - 12, Math.max(0, fh), 4); if (fh > 1) ctx.fill();
       plabel(it.etiqueta || ("N.º " + (i + 1)), cx, top + th + 30, P.white, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800);
       if (it.valor) plabel(it.valor, cx, top + th + 64, alert ? P.red : P.green, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800, true);
@@ -727,7 +729,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (d.encabezado) plabel(d.encabezado, R.x + R.w / 2, R.y + 30, P.amber, WIDE ? 26 : 30, "center", 800);
     var top = R.y + (d.encabezado ? 70 : 20), ch = Math.min(150, (R.h - (top - R.y) - 20) / Math.max(1, items.length) - 22), cw = R.w * 0.86, cx = R.x + (R.w - cw) / 2;
     items.forEach(function (it, i) {
-      var p = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local); if (p.a <= 0) return; var y = top + i * (ch + 22), col = cols[i % 4];
+      var p = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local, true); if (p.a <= 0) return; var y = top + i * (ch + 22), col = cols[i % 4];
       var tt = typeof it === "string" ? it : it.titulo, dt = typeof it === "string" ? "" : it.detalle;
       ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(0, (1 - Math.min(1, p.a / 0.42)) * 20); rr(cx, y, cw, ch, 16); ctx.fillStyle = P.fill; ctx.fill(); glow(col, p.act); ctx.lineWidth = 4 + 2 * p.act; ctx.strokeStyle = col; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx + ch * 0.45, y + ch / 2, ch * 0.24, 0, 7); ctx.fill(); plabel(String(i + 1), cx + ch * 0.45, y + ch / 2 + 2, P.white, Math.round(ch * 0.26), "center", 800);
@@ -747,8 +749,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (d.nota) plabel(d.nota, (ln[0][0] + ln[1][0]) / 2, y + h * 0.45 - 40, P.amber, WIDE ? 24 : 28);
   }
   function pzLupa(R, sc, local, t) {
-    var d = sc.datos || {}, y0 = R.y + R.h * 0.12, bx = R.x + R.w * 0.16, bw = R.w * 0.22, bh = 64, a = popIn(local, 0).a;
-    pbox(bx, y0, bw, bh, P.cyan, a); ctx.save(); ctx.globalAlpha *= a; plabel(d.etiqueta || "UNIÓN", bx + bw / 2, y0 + bh / 2, P.white, 28, "center", 800); ctx.restore();
+    var d = sc.datos || {}, y0 = R.y + R.h * 0.12, bx = R.x + R.w * 0.16, bh = 64, a = popIn(local, 0).a; pfont(28, 800);
+    var bw = Math.min(R.w * 0.5, Math.max(R.w * 0.22, ctx.measureText(String(d.etiqueta || "UNIÓN").toUpperCase()).width + 48));
+    pbox(bx, y0, bw, bh, P.cyan, a); ctx.save(); ctx.globalAlpha *= a; plabel(d.etiqueta || "UNIÓN", bx + bw / 2, y0 + bh / 2, P.white, pfit(String(d.etiqueta || "UNIÓN").toUpperCase(), bw - 24, 28, 14, 800), "center", 800); ctx.restore();
     ctx.save(); ctx.globalAlpha *= a; rr(bx + bw, y0 + bh / 2 - 12, R.w * 0.22, 24, 12); ctx.fillStyle = P.blue; ctx.fill(); ctx.restore();
     var cx = R.x + R.w * 0.5, cy = R.y + R.h * 0.6, r = Math.min(R.w, R.h) * 0.27, z = easeOut((local - 0.3) / 0.6);
     if (z > 0) {
@@ -966,7 +969,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       // etiquetas holográficas (estilo isométrico): título pequeño + cifra grande
       if (ISO && (sc.badges || []).length) {
         var bs = sc.badges.slice(0, 3), bw = WIDE ? 280 : Math.min(300, (900 - 20 * (bs.length - 1)) / bs.length), bh = WIDE ? 120 : 130, bx0 = (WIDE ? PL.pillsX - bw / 2 : W / 2 - (bs.length * bw + (bs.length - 1) * 20) / 2);
-        bs.forEach(function (b, k) { var pp = focus(i, FT[i].b[k], local), hc = TIPO_COLOR[String(b.tipo || "").toLowerCase()] || P.cyan, hx = WIDE ? bx0 : bx0 + k * (bw + 20), hy = WIDE ? py + k * (bh + 16) : py;
+        bs.forEach(function (b, k) { var pp = focus(i, FT[i].b[k], local, true), hc = TIPO_COLOR[String(b.tipo || "").toLowerCase()] || P.cyan, hx = WIDE ? bx0 : bx0 + k * (bw + 20), hy = WIDE ? py + k * (bh + 16) : py;
           ctx.save(); ctx.translate(hx + bw / 2, hy + bh / 2); ctx.scale(pp.s, pp.s); ctx.translate(-(hx + bw / 2), -(hy + bh / 2)); glow(hc, pp.act); holoTag(hx, hy, bw, bh, b.etiqueta || b.label, b.valor || b.value, hc, pp.a); ctx.restore(); });
         py += WIDE ? bs.length * (bh + 16) : bh + 24;
       }
