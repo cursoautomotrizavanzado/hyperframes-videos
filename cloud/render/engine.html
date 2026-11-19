@@ -885,7 +885,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       var tt = sc.titulo || ""; pfit(tt, WIDE ? 1700 : 960, PL.titlePx, 30, ISO ? 800 : 700); ctx.fillStyle = P.white; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tt, W / 2, PL.titleY);
       if (CAR && sc.texto && PL.bodyY) { pfont(30, 500); ctx.fillStyle = "#C3D0E8"; wrap(sc.texto, 940).slice(0, 2).forEach(function (ln, k) { ctx.fillText(ln, W / 2, PL.bodyY + k * 40); }); }
       var R = PL.ill;
-      ctx.save(); camApply(i, sc, local, dur, R);
+      ctx.save(); ctx.beginPath(); ctx.rect(0, R.y - 30, W, R.h + 60); ctx.clip(); camApply(i, sc, local, dur, R);
       try {
         if (CLAUDE && drawClaude(i, sc, local, t, dur, R)) { /* dibujado por el código a medida */ }
         else if (tipo === "inyector_retorno") pzInyectorRetorno(R, sc, local, t);
@@ -946,7 +946,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     if (i === SC.length - 1) fadeOut = 1;
     ctx.save(); ctx.globalAlpha = clamp(fadeIn * fadeOut, 0, 1);
     ctx.translate(0, (1 - fadeIn) * 24);
-    ctx.save(); camApply(i, sc, local, dur, L.stage);
+    ctx.save(); ctx.beginPath(); ctx.rect(L.stage.x - 10, L.stage.y - 10, L.stage.w + 20, L.stage.h + 20); ctx.clip(); camApply(i, sc, local, dur, L.stage);
     stage(sc, local, t, dur);
     ctx.restore();
     rack(sc, local);
