@@ -1,0 +1,430 @@
+ANDROID_HOME=/usr/local/lib/android/sdk ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+openjdk version "21.0.13" 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-21.0.13+9 (build 21.0.13+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.13+9 (build 21.0.13+9-LTS, mixed mode, sharing)
++ npm install --no-audit --no-fund
+
+added 156 packages in 7s
++ rm -rf www
++ mkdir -p www
++ cp -r ../web/DroidScript_Main.js ../web/cloud_bundle.js ../web/fonts ../web/icon-1024.png ../web/icon-192.png ../web/icon-512.png ../web/icon.svg ../web/index.html ../web/manifest.json ../web/sw.js www/
++ npx cap add android
+✔ Adding native android project in android in 38.19ms
+✔ add in 38.86ms
+✔ Copying web assets from www to android/app/src/main/assets/public in 4.26ms
+✔ Creating capacitor.config.json in android/app/src/main/assets in 344.89μs
+✔ copy android in 12.74ms
+✔ Updating Android plugins in 981.70μs
+[info] Found 4 Capacitor plugins for android:
+       @capacitor/browser@8.0.5
+       @capacitor/clipboard@8.0.1
+       @capacitor/filesystem@8.1.5
+       @capacitor/share@8.0.3
+✔ update android in 19.94ms
+✔ Syncing Gradle in 146.57μs
+[success] android platform added!
+Follow the Developer Workflow guide to get building:
+https://capacitorjs.com/docs/basics/workflow
++ npx @capacitor/assets generate --android --iconBackgroundColor '#080D16' --splashBackgroundColor '#080D16'
+[log] xml(load) at /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/AndroidManifest.xml
+[log] xml(load) Found root namespaces in XML file: http://schemas.android.com/apk/res/android
+Generating assets for android
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-ldpi/ic_launcher.png (1021 B)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-mdpi/ic_launcher.png (1.69 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-hdpi/ic_launcher.png (3.15 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png (4.85 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png (8.99 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png (12.7 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-ldpi/ic_launcher_round.png (1.96 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png (2.58 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png (3.91 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png (5.21 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png (8.67 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png (9.62 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-ldpi/ic_launcher_foreground.png (1.33 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png (1.75 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png (2.69 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png (3.28 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png (5.75 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png (7.24 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-ldpi/ic_launcher_background.png (160 B)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-mdpi/ic_launcher_background.png (210 B)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-hdpi/ic_launcher_background.png (300 B)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_background.png (424 B)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_background.png (834 B)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png (1.12 KB)
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable/splash.png (11.26 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-ldpi/splash.png (6.62 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-mdpi/splash.png (11.52 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-hdpi/splash.png (21.52 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-xhdpi/splash.png (42 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-xxhdpi/splash.png (62.31 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-xxxhdpi/splash.png (88.69 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-ldpi/splash.png (6.71 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-mdpi/splash.png (11.26 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-hdpi/splash.png (21.66 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-xhdpi/splash.png (43.9 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-xxhdpi/splash.png (61.99 KB)
+CREATE android splash /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-xxxhdpi/splash.png (88.67 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-night/splash.png (6.62 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-night-ldpi/splash.png (6.62 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-night-mdpi/splash.png (11.52 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-night-hdpi/splash.png (21.52 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-night-xhdpi/splash.png (42 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-night-xxhdpi/splash.png (62.31 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-land-night-xxxhdpi/splash.png (88.69 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-night-ldpi/splash.png (6.71 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-night-mdpi/splash.png (11.26 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-night-hdpi/splash.png (21.66 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-night-xhdpi/splash.png (43.9 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-night-xxhdpi/splash.png (61.99 KB)
+CREATE android splash-dark /home/runner/work/hyperframes-videos/hyperframes-videos/android/android/app/src/main/res/drawable-port-night-xxxhdpi/splash.png (88.67 KB)
+
+
+Totals:
+android: 74 generated, 1.02 MB total
++ sed -i 's#<application#<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <application android:requestLegacyExternalStorage="true"#' android/app/src/main/AndroidManifest.xml
++ npx cap sync android
+✔ Copying web assets from www to android/app/src/main/assets/public in 6.87ms
+✔ Creating capacitor.config.json in android/app/src/main/assets in 660.41μs
+✔ copy android in 15.81ms
+✔ Updating Android plugins in 1.08ms
+[info] Found 4 Capacitor plugins for android:
+       @capacitor/browser@8.0.5
+       @capacitor/clipboard@8.0.1
+       @capacitor/filesystem@8.1.5
+       @capacitor/share@8.0.3
+✔ update android in 26.62ms
+[info] Sync finished in 0.059s
++ cd android
++ chmod +x gradlew
++ ./gradlew assembleDebug --no-daemon --stacktrace
+Downloading https://services.gradle.org/distributions/gradle-8.14.3-all.zip
+.....................10%.....................20%......................30%.....................40%......................50%.....................60%.....................70%......................80%.....................90%......................100%
+
+Welcome to Gradle 8.14.3!
+
+Here are the highlights of this release:
+ - Java 24 support
+ - GraalVM Native Image toolchain selection
+ - Enhancements to test reporting
+ - Build Authoring improvements
+
+For more details see https://docs.gradle.org/8.14.3/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :capacitor-android:preBuild UP-TO-DATE
+> Task :capacitor-android:preDebugBuild UP-TO-DATE
+> Task :capacitor-browser:preBuild UP-TO-DATE
+> Task :capacitor-browser:preDebugBuild UP-TO-DATE
+> Task :capacitor-clipboard:preBuild UP-TO-DATE
+> Task :capacitor-clipboard:preDebugBuild UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :capacitor-android:writeDebugAarMetadata
+> Task :capacitor-browser:writeDebugAarMetadata
+> Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preDebugBuild UP-TO-DATE
+> Task :capacitor-clipboard:writeDebugAarMetadata
+> Task :capacitor-filesystem:preBuild UP-TO-DATE
+> Task :capacitor-filesystem:preDebugBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeDebugAarMetadata
+> Task :capacitor-share:preBuild UP-TO-DATE
+> Task :capacitor-share:preDebugBuild UP-TO-DATE
+> Task :capacitor-filesystem:writeDebugAarMetadata
+> Task :capacitor-share:writeDebugAarMetadata
+> Task :capacitor-android:processDebugNavigationResources
+> Task :capacitor-browser:processDebugNavigationResources
+> Task :capacitor-clipboard:processDebugNavigationResources
+> Task :app:checkDebugAarMetadata
+> Task :capacitor-cordova-android-plugins:processDebugNavigationResources
+> Task :capacitor-filesystem:processDebugNavigationResources
+> Task :capacitor-share:processDebugNavigationResources
+> Task :app:processDebugNavigationResources
+> Task :app:generateDebugResValues
+> Task :capacitor-android:generateDebugResValues
+> Task :app:compileDebugNavigationResources
+> Task :capacitor-android:generateDebugResources
+> Task :capacitor-android:packageDebugResources
+> Task :capacitor-browser:generateDebugResValues
+> Task :capacitor-browser:generateDebugResources
+> Task :capacitor-browser:packageDebugResources
+> Task :capacitor-clipboard:generateDebugResValues
+> Task :capacitor-clipboard:generateDebugResources
+> Task :capacitor-clipboard:packageDebugResources
+> Task :capacitor-cordova-android-plugins:generateDebugResValues
+> Task :capacitor-cordova-android-plugins:generateDebugResources
+> Task :capacitor-cordova-android-plugins:packageDebugResources
+> Task :capacitor-filesystem:generateDebugResValues
+> Task :capacitor-filesystem:generateDebugResources
+> Task :capacitor-filesystem:packageDebugResources
+> Task :capacitor-share:generateDebugResValues
+> Task :capacitor-share:generateDebugResources
+> Task :capacitor-share:packageDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :capacitor-android:extractDeepLinksDebug
+> Task :capacitor-browser:extractDeepLinksDebug
+> Task :capacitor-clipboard:extractDeepLinksDebug
+> Task :capacitor-android:processDebugManifest
+> Task :capacitor-browser:processDebugManifest
+> Task :app:parseDebugLocalResources
+> Task :capacitor-clipboard:processDebugManifest
+> Task :capacitor-cordova-android-plugins:extractDeepLinksDebug
+> Task :capacitor-cordova-android-plugins:processDebugManifest
+> Task :capacitor-filesystem:extractDeepLinksDebug
+> Task :capacitor-share:extractDeepLinksDebug
+> Task :capacitor-filesystem:processDebugManifest
+> Task :capacitor-share:processDebugManifest
+> Task :capacitor-android:compileDebugLibraryResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :capacitor-browser:compileDebugLibraryResources
+> Task :capacitor-android:parseDebugLocalResources
+> Task :capacitor-clipboard:compileDebugLibraryResources
+> Task :capacitor-browser:parseDebugLocalResources
+> Task :capacitor-cordova-android-plugins:compileDebugLibraryResources
+> Task :capacitor-clipboard:parseDebugLocalResources
+> Task :capacitor-browser:generateDebugRFile
+> Task :capacitor-android:generateDebugRFile
+> Task :capacitor-cordova-android-plugins:parseDebugLocalResources
+> Task :capacitor-clipboard:generateDebugRFile
+> Task :capacitor-filesystem:compileDebugLibraryResources
+> Task :capacitor-share:compileDebugLibraryResources
+> Task :capacitor-filesystem:parseDebugLocalResources
+> Task :capacitor-cordova-android-plugins:generateDebugRFile
+> Task :capacitor-share:parseDebugLocalResources
+> Task :capacitor-android:javaPreCompileDebug
+> Task :capacitor-filesystem:generateDebugRFile
+> Task :capacitor-browser:javaPreCompileDebug
+> Task :capacitor-share:generateDebugRFile
+
+> Task :capacitor-android:compileDebugJavaWithJavac
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :capacitor-clipboard:javaPreCompileDebug
+> Task :capacitor-filesystem:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :capacitor-cordova-android-plugins:javaPreCompileDebug
+> Task :capacitor-filesystem:javaPreCompileDebug
+> Task :capacitor-cordova-android-plugins:compileDebugJavaWithJavac NO-SOURCE
+> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarDebug
+> Task :capacitor-share:javaPreCompileDebug
+> Task :capacitor-android:bundleLibCompileToJarDebug
+> Task :app:mergeDebugShaders
+> Task :app:processDebugResources
+> Task :capacitor-browser:compileDebugJavaWithJavac
+> Task :capacitor-browser:bundleLibCompileToJarDebug
+> Task :capacitor-clipboard:compileDebugJavaWithJavac
+> Task :capacitor-clipboard:bundleLibCompileToJarDebug
+> Task :capacitor-share:compileDebugJavaWithJavac
+> Task :capacitor-share:bundleLibCompileToJarDebug
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :capacitor-android:mergeDebugShaders
+> Task :capacitor-android:compileDebugShaders NO-SOURCE
+> Task :capacitor-android:generateDebugAssets UP-TO-DATE
+> Task :capacitor-android:mergeDebugAssets
+> Task :capacitor-browser:mergeDebugShaders
+> Task :capacitor-browser:compileDebugShaders NO-SOURCE
+> Task :capacitor-browser:generateDebugAssets UP-TO-DATE
+> Task :capacitor-browser:mergeDebugAssets
+> Task :capacitor-clipboard:mergeDebugShaders
+> Task :capacitor-clipboard:compileDebugShaders NO-SOURCE
+> Task :capacitor-clipboard:generateDebugAssets UP-TO-DATE
+> Task :capacitor-clipboard:mergeDebugAssets
+> Task :capacitor-cordova-android-plugins:mergeDebugShaders
+> Task :capacitor-cordova-android-plugins:compileDebugShaders NO-SOURCE
+> Task :capacitor-cordova-android-plugins:generateDebugAssets UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeDebugAssets
+> Task :capacitor-filesystem:mergeDebugShaders
+> Task :capacitor-filesystem:compileDebugShaders NO-SOURCE
+> Task :capacitor-filesystem:generateDebugAssets UP-TO-DATE
+> Task :capacitor-filesystem:mergeDebugAssets
+> Task :capacitor-share:mergeDebugShaders
+> Task :capacitor-share:compileDebugShaders NO-SOURCE
+> Task :capacitor-share:generateDebugAssets UP-TO-DATE
+> Task :capacitor-share:mergeDebugAssets
+> Task :app:mergeDebugAssets
+> Task :capacitor-browser:bundleLibRuntimeToJarDebug
+> Task :capacitor-clipboard:bundleLibRuntimeToJarDebug
+> Task :app:compressDebugAssets
+> Task :capacitor-share:bundleLibRuntimeToJarDebug
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarDebug
+> Task :capacitor-android:bundleLibRuntimeToJarDebug
+> Task :app:desugarDebugFileDependencies
+> Task :app:processDebugJavaRes NO-SOURCE
+> Task :capacitor-android:processDebugJavaRes NO-SOURCE
+> Task :capacitor-browser:processDebugJavaRes NO-SOURCE
+> Task :capacitor-clipboard:processDebugJavaRes NO-SOURCE
+> Task :capacitor-cordova-android-plugins:processDebugJavaRes NO-SOURCE
+> Task :capacitor-share:processDebugJavaRes NO-SOURCE
+> Task :app:checkDebugDuplicateClasses
+> Task :capacitor-browser:bundleLibRuntimeToDirDebug
+> Task :capacitor-filesystem:compileDebugKotlin
+> Task :capacitor-filesystem:compileDebugJavaWithJavac NO-SOURCE
+> Task :capacitor-filesystem:bundleLibRuntimeToJarDebug
+> Task :capacitor-filesystem:bundleLibCompileToJarDebug
+> Task :capacitor-filesystem:processDebugJavaRes
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics
+> Task :capacitor-clipboard:bundleLibRuntimeToDirDebug
+> Task :capacitor-filesystem:bundleLibRuntimeToDirDebug
+> Task :capacitor-share:bundleLibRuntimeToDirDebug
+> Task :capacitor-android:bundleLibRuntimeToDirDebug
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToDirDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJniLibFolders
+> Task :capacitor-android:mergeDebugJniLibFolders
+> Task :capacitor-android:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-android:copyDebugJniLibsProjectOnly
+> Task :capacitor-browser:mergeDebugJniLibFolders
+> Task :capacitor-browser:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-browser:copyDebugJniLibsProjectOnly
+> Task :capacitor-clipboard:mergeDebugJniLibFolders
+> Task :capacitor-clipboard:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-clipboard:copyDebugJniLibsProjectOnly
+> Task :capacitor-cordova-android-plugins:mergeDebugJniLibFolders
+> Task :app:mergeExtDexDebug
+> Task :capacitor-cordova-android-plugins:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectOnly
+> Task :capacitor-filesystem:mergeDebugJniLibFolders
+> Task :capacitor-filesystem:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-filesystem:copyDebugJniLibsProjectOnly
+> Task :capacitor-share:mergeDebugJniLibFolders
+> Task :capacitor-share:mergeDebugNativeLibs NO-SOURCE
+> Task :capacitor-share:copyDebugJniLibsProjectOnly
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:mergeDebugJavaResource
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:mergeLibDexDebug
+> Task :capacitor-android:checkDebugAarMetadata
+> Task :capacitor-android:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-android:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-android:extractDebugAnnotations
+> Task :capacitor-android:extractDeepLinksForAarDebug
+> Task :capacitor-android:mergeDebugGeneratedProguardFiles
+> Task :capacitor-android:mergeDebugConsumerProguardFiles
+> Task :capacitor-android:prepareDebugArtProfile
+> Task :capacitor-android:prepareLintJarForPublish
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :capacitor-android:mergeDebugJavaResource
+> Task :capacitor-browser:checkDebugAarMetadata
+> Task :capacitor-android:syncDebugLibJars
+> Task :capacitor-android:bundleDebugAar
+> Task :capacitor-android:assembleDebug
+> Task :capacitor-browser:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-browser:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-browser:extractDebugAnnotations
+> Task :capacitor-browser:extractDeepLinksForAarDebug
+> Task :capacitor-browser:mergeDebugGeneratedProguardFiles
+> Task :capacitor-browser:mergeDebugConsumerProguardFiles
+> Task :capacitor-browser:prepareDebugArtProfile
+> Task :capacitor-browser:prepareLintJarForPublish
+> Task :capacitor-browser:mergeDebugJavaResource
+> Task :capacitor-clipboard:checkDebugAarMetadata
+> Task :capacitor-browser:syncDebugLibJars
+> Task :capacitor-browser:bundleDebugAar
+> Task :capacitor-browser:assembleDebug
+> Task :capacitor-clipboard:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-clipboard:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-clipboard:extractDebugAnnotations
+> Task :capacitor-clipboard:extractDeepLinksForAarDebug
+> Task :capacitor-clipboard:mergeDebugGeneratedProguardFiles
+> Task :capacitor-clipboard:mergeDebugConsumerProguardFiles
+> Task :capacitor-clipboard:prepareDebugArtProfile
+> Task :capacitor-clipboard:prepareLintJarForPublish
+> Task :capacitor-clipboard:mergeDebugJavaResource
+> Task :capacitor-cordova-android-plugins:checkDebugAarMetadata
+> Task :capacitor-clipboard:syncDebugLibJars
+> Task :capacitor-clipboard:bundleDebugAar
+> Task :capacitor-clipboard:assembleDebug
+> Task :capacitor-cordova-android-plugins:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-cordova-android-plugins:extractDebugAnnotations
+> Task :capacitor-cordova-android-plugins:extractDeepLinksForAarDebug
+> Task :capacitor-cordova-android-plugins:mergeDebugGeneratedProguardFiles
+> Task :capacitor-cordova-android-plugins:mergeDebugConsumerProguardFiles
+> Task :capacitor-cordova-android-plugins:prepareDebugArtProfile
+> Task :capacitor-cordova-android-plugins:prepareLintJarForPublish
+> Task :capacitor-cordova-android-plugins:mergeDebugJavaResource
+> Task :capacitor-cordova-android-plugins:syncDebugLibJars
+> Task :capacitor-filesystem:checkDebugAarMetadata
+> Task :capacitor-cordova-android-plugins:bundleDebugAar
+> Task :capacitor-cordova-android-plugins:assembleDebug
+> Task :capacitor-filesystem:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-filesystem:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-filesystem:extractDebugAnnotations
+> Task :capacitor-filesystem:extractDeepLinksForAarDebug
+> Task :capacitor-filesystem:mergeDebugGeneratedProguardFiles
+> Task :capacitor-filesystem:mergeDebugConsumerProguardFiles
+> Task :capacitor-filesystem:prepareDebugArtProfile
+> Task :capacitor-filesystem:prepareLintJarForPublish
+> Task :capacitor-filesystem:mergeDebugJavaResource
+> Task :capacitor-share:checkDebugAarMetadata
+> Task :capacitor-filesystem:syncDebugLibJars
+> Task :capacitor-filesystem:bundleDebugAar
+> Task :capacitor-filesystem:assembleDebug
+> Task :capacitor-share:stripDebugDebugSymbols NO-SOURCE
+> Task :capacitor-share:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-share:extractDebugAnnotations
+> Task :capacitor-share:extractDeepLinksForAarDebug
+> Task :capacitor-share:mergeDebugGeneratedProguardFiles
+> Task :capacitor-share:mergeDebugConsumerProguardFiles
+> Task :capacitor-share:prepareDebugArtProfile
+> Task :capacitor-share:prepareLintJarForPublish
+> Task :capacitor-share:mergeDebugJavaResource
+> Task :capacitor-share:syncDebugLibJars
+> Task :capacitor-share:bundleDebugAar
+> Task :capacitor-share:assembleDebug
+
+[Incubating] Problems report is available at: file:///home/runner/work/hyperframes-videos/hyperframes-videos/android/android/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 2m 5s
+214 actionable tasks: 214 executed
++ cp app/build/outputs/apk/debug/app-debug.apk ../../AutoDiagStudio.apk

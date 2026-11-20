@@ -1,0 +1,139 @@
+pid: 3172
+sockets: 0000000000000000: 00000002 00000000 00010000 0001 01 55800 @webview_devtools_remote_3172
+url: https://localhost/
+console.error: Error injecting safe area CSS: TypeError: Cannot read properties of null (reading 'style')
+    at <anonymous>:2:28
+reload_ms: 4
+js_listo_ms: 1157
+env: {"w":320,"h":616,"dpr":1,"cap":true,"plugins":["SystemBars","Clipboard","CapacitorCookies","WebView","Filesystem","Share","CapacitorHttp","Browser"],"ua":"Mozilla/5.0 (Linux; Android 14; sdk_gphone64_x86_64 Build/UE1A.230829.050; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/113.0.5672.136 Mobile Safari/537.36"}
+webview_bounds: {"x":0,"y":24,"w":320,"h":616}
+probe tab_cuentas: {"sel":"[data-tab=\"accounts\"]","x":259,"y":124,"w":93,"h":86,"recibe":true,"encima":"BUTTON"}
+tap tab_cuentas: {"X":259,"Y":148,"webTop":24}
+toast tab_cuentas: {"texto":"","ms":-1}
+vistas: v-studio:false v-social:false v-accounts:true
+probe tab_estudio: {"sel":"[data-tab=\"studio\"]","x":61,"y":124,"w":93,"h":86,"recibe":true,"encima":"BUTTON"}
+tap tab_estudio: {"X":61,"Y":148,"webTop":24}
+toast tab_estudio: {"texto":"","ms":-1}
+vistas: v-studio:true v-social:false v-accounts:false
+probe tab_cuentas_2: {"sel":"[data-tab=\"accounts\"]","x":259,"y":124,"w":93,"h":86,"recibe":true,"encima":"BUTTON"}
+tap tab_cuentas_2: {"X":259,"Y":148,"webTop":24}
+toast tab_cuentas_2: {"texto":"","ms":-1}
+vistas: v-studio:false v-social:false v-accounts:true
+probe probar_gemini_vacio: {"sel":"#btnGTest","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnGTest"}
+tap probar_gemini_vacio: {"X":160,"Y":333,"webTop":24}
+toast probar_gemini_vacio: {"texto":"Pega tu API Key","ms":217}
+probe probar_github_vacio: {"sel":"#btnGhTest","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnGhTest"}
+tap probar_github_vacio: {"X":160,"Y":333,"webTop":24}
+toast probar_github_vacio: {"texto":"Pega tu token","ms":198}
+probe autoconfigurar_vacio: {"sel":"#btnProvision","x":160,"y":309,"w":258,"h":51,"recibe":true,"encima":"btnProvision"}
+tap autoconfigurar_vacio: {"X":160,"Y":333,"webTop":24}
+toast autoconfigurar_vacio: {"texto":"","ms":-1}
+probe perfil_nuevo_vacio: {"sel":"#btnProfNew","x":86,"y":309,"w":110,"h":40,"recibe":true,"encima":"btnProfNew"}
+tap perfil_nuevo_vacio: {"X":86,"Y":333,"webTop":24}
+toast perfil_nuevo_vacio: {"texto":"Escribe un nombre","ms":58}
+probe render_deploy: {"sel":"#btnRenderDeploy","x":160,"y":308,"w":258,"h":40,"recibe":true,"encima":"btnRenderDeploy"}
+tap render_deploy: {"X":160,"Y":332,"webTop":24}
+toast render_deploy: {"texto":"Primero Auto-Configura tu nube (paso 2)","ms":95}
+probe copiar_worker: {"sel":"#btnCopyWorker","x":160,"y":312,"w":258,"h":40,"recibe":true,"encima":"btnCopyWorker"}
+tap copiar_worker: {"X":160,"Y":336,"webTop":24}
+console.startGroupCollapsed: %cnative %cClipboard.write (#15386949) font-weight: lighter; color: gray font-weight: bold; color: #000
+console.dir: Object
+console.endGroup: console.groupEnd
+console.startGroupCollapsed: %cresult %cClipboard.write (#15386949) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444
+console.dir: 
+console.endGroup: console.groupEnd
+toast copiar_worker: {"texto":"worker.js copiado","ms":328}
+probe probar_gemini_invalida: {"sel":"#btnGTest","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnGTest"}
+tap probar_gemini_invalida: {"X":160,"Y":333,"webTop":24}
+toast probar_gemini_invalida: {"texto":"","ms":-1}
+gStatus: 🔴 Llave inválida: API key not valid. Please pass a valid API key.
+probe probar_github_invalido: {"sel":"#btnGhTest","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnGhTest"}
+tap probar_github_invalido: {"X":160,"Y":333,"webTop":24}
+toast probar_github_invalido: {"texto":"","ms":-1}
+ghStatus: 🔴 Token inválido: Bad credentials
+probe autoconfigurar_invalido: {"sel":"#btnProvision","x":160,"y":309,"w":258,"h":51,"recibe":true,"encima":"btnProvision"}
+tap autoconfigurar_invalido: {"X":160,"Y":333,"webTop":24}
+toast autoconfigurar_invalido: {"texto":"","ms":-1}
+provLog: 1/5 · Verificando usuario…
+❌ Bad credentials
+
+probe tab_estudio_2: {"sel":"[data-tab=\"studio\"]","x":61,"y":124,"w":93,"h":86,"recibe":true,"encima":"BUTTON"}
+tap tab_estudio_2: {"X":61,"Y":148,"webTop":24}
+toast tab_estudio_2: {"texto":"","ms":-1}
+probe generar_vacio: {"sel":"#btnGen","x":160,"y":308,"w":258,"h":70,"recibe":true,"encima":"btnGen"}
+tap generar_vacio: {"X":160,"Y":332,"webTop":24}
+toast generar_vacio: {"texto":"Escribe la idea o pega tu guion","ms":63}
+probe prompt_vacio: {"sel":"#btnPromptCopy","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnPromptCopy"}
+tap prompt_vacio: {"X":160,"Y":333,"webTop":24}
+toast prompt_vacio: {"texto":"Pega primero tu texto narrado en la casilla Guion","ms":116}
+probe copiar_guion: {"sel":"#btnCopyGuion","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnCopyGuion"}
+tap copiar_guion: {"X":160,"Y":333,"webTop":24}
+toast copiar_guion: {"texto":"El guion está vacío","ms":219}
+probe voz_prueba: {"sel":"#btnSpeak","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnSpeak"}
+tap voz_prueba: {"X":160,"Y":333,"webTop":24}
+toast voz_prueba: {"texto":"La voz de prueba no está disponible en el APK; la voz real se escucha en el MP4","ms":115}
+probe html: {"sel":"#btnHtml","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnHtml"}
+tap html: {"X":160,"Y":333,"webTop":24}
+toast html: {"texto":"Genera primero","ms":309}
+probe render_sin_datos: {"sel":"#btnRender","x":160,"y":443,"w":258,"h":70,"recibe":true,"encima":"btnRender"}
+tap render_sin_datos: {"X":160,"Y":467,"webTop":24}
+toast render_sin_datos: {"texto":"Primero genera el guion con Gemini","ms":165}
+probe prompt_con_guion: {"sel":"#btnPromptCopy","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnPromptCopy"}
+tap prompt_con_guion: {"X":160,"Y":333,"webTop":24}
+console.startGroupCollapsed: %cnative %cClipboard.write (#15386950) font-weight: lighter; color: gray font-weight: bold; color: #000
+console.dir: Object
+console.endGroup: console.groupEnd
+console.startGroupCollapsed: %cresult %cClipboard.write (#15386950) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444
+console.dir: 
+console.endGroup: console.groupEnd
+toast prompt_con_guion: {"texto":"🤖 Prompt copiado: pégalo en la IA elegida y pega su respuesta en Escenas","ms":380}
+probe aplicar_escenas: {"sel":"#btnApplyJson","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnApplyJson"}
+tap aplicar_escenas: {"X":160,"Y":333,"webTop":24}
+toast aplicar_escenas: {"texto":"Aplicado","ms":301}
+pvInfo: ≈ 4 s · 1 escenas
+probe tab_redes: {"sel":"[data-tab=\"social\"]","x":160,"y":124,"w":93,"h":86,"recibe":true,"encima":"BUTTON"}
+tap tab_redes: {"X":160,"Y":148,"webTop":24}
+toast tab_redes: {"texto":"","ms":-1}
+vistas: v-studio:false v-social:true v-accounts:false
+probe rev_prompt: {"sel":"#btnRevPrompt","x":160,"y":308,"w":258,"h":40,"recibe":true,"encima":"btnRevPrompt"}
+tap rev_prompt: {"X":160,"Y":332,"webTop":24}
+console.startGroupCollapsed: %cnative %cClipboard.write (#15386951) font-weight: lighter; color: gray font-weight: bold; color: #000
+console.dir: Object
+console.endGroup: console.groupEnd
+console.startGroupCollapsed: %cresult %cClipboard.write (#15386951) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444
+console.dir: 
+console.endGroup: console.groupEnd
+toast rev_prompt: {"texto":"📋 Prompt copiado: pégalo en tu IA y pega aquí su respuesta","ms":179}
+probe copies_prompt: {"sel":"#btnCopyPrompt","x":160,"y":308,"w":258,"h":40,"recibe":true,"encima":"btnCopyPrompt"}
+tap copies_prompt: {"X":160,"Y":332,"webTop":24}
+console.startGroupCollapsed: %cnative %cClipboard.write (#15386952) font-weight: lighter; color: gray font-weight: bold; color: #000
+console.dir: Object
+console.endGroup: console.groupEnd
+console.startGroupCollapsed: %cresult %cClipboard.write (#15386952) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444
+console.dir: 
+console.endGroup: console.groupEnd
+toast copies_prompt: {"texto":"📋 Prompt copiado: pégalo en tu IA y pega aquí su respuesta","ms":270}
+probe car_prompt: {"sel":"#btnCarPrompt","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnCarPrompt"}
+tap car_prompt: {"X":160,"Y":333,"webTop":24}
+console.startGroupCollapsed: %cnative %cClipboard.write (#15386953) font-weight: lighter; color: gray font-weight: bold; color: #000
+console.dir: Object
+console.endGroup: console.groupEnd
+console.startGroupCollapsed: %cresult %cClipboard.write (#15386953) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444
+console.dir: 
+console.endGroup: console.groupEnd
+toast car_prompt: {"texto":"📋 Prompt copiado: pégalo en tu IA y pega aquí su respuesta","ms":228}
+probe rev_gemini_sin_llave: {"sel":"#btnRevGem","x":160,"y":309,"w":258,"h":43,"recibe":true,"encima":"btnRevGem"}
+tap rev_gemini_sin_llave: {"X":160,"Y":333,"webTop":24}
+toast rev_gemini_sin_llave: {"texto":"❌ API key not valid. Please pass a valid API key.","ms":217}
+probe tab_cuentas_3: {"sel":"[data-tab=\"accounts\"]","x":259,"y":124,"w":93,"h":86,"recibe":true,"encima":"BUTTON"}
+tap tab_cuentas_3: {"X":259,"Y":148,"webTop":24}
+toast tab_cuentas_3: {"texto":"","ms":-1}
+probe obtener_api_key: {"sel":"#btnGKeyGet","x":160,"y":309,"w":258,"h":40,"recibe":true,"encima":"btnGKeyGet"}
+tap obtener_api_key: {"X":160,"Y":333,"webTop":24}
+console.startGroupCollapsed: %cnative %cBrowser.open (#15386954) font-weight: lighter; color: gray font-weight: bold; color: #000
+console.dir: Object
+console.endGroup: console.groupEnd
+console.startGroupCollapsed: %cresult %cBrowser.open (#15386954) font-style: italic; font-weight: lighter; color: gray font-style: italic; font-weight: bold; color: #444
+console.dir: 
+console.endGroup: console.groupEnd
+toast obtener_api_key: {"texto":"","ms":-1}

@@ -1,0 +1,13 @@
+=== INSTAGRAM ===
+¿Tu inyector devuelve de más?
+
+La prueba de retorno compara inyectores entre sí y con el manual.
+
+#diesel #commonrail #inyectores
+
+=== FACEBOOK ===
+Prueba de retorno de inyectores
+
+Cómo detectar una fuga interna.
+
+#diesel #mecanica
