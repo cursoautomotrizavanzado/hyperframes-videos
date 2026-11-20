@@ -182,6 +182,9 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     return out;
   }
   var FOCO = JOB.foco !== false && !CAR;
+  // Textos de un ítem, acepte la forma que acepte la IA (titulo/texto/etiqueta/nombre…)
+  function itT(it) { if (it == null) return ""; if (typeof it !== "object") return String(it); return String(it.titulo || it.texto || it.etiqueta || it.nombre || it.label || it.title || it.paso || it.valor || ""); }
+  function itD(it) { if (!it || typeof it !== "object") return ""; var t = itT(it), c = [it.detalle, it.descripcion, it.subtitulo, it.nota, it.explicacion, it.description, it.valor].filter(function (x) { return x && String(x) !== t; }); return c.length ? String(c[0]) : ""; }
   function itemsOf(sc) { var d = sc.datos || {}; return (d.items || d.probetas || d.puntos || d.etiquetas_laterales || d.etiquetas || d.pines || []).slice(0, 6); }
   var FT = [];
   function buildFT() { return SC.map(function (sc, i) {
@@ -478,7 +481,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       var a = easeOut((local - 0.4 - j * 0.25) / .4); if (a <= 0) return; ctx.save(); ctx.globalAlpha = a;
       var col = TIPO_COLOR[String(p.tipo || "").toLowerCase()] || C.cyan, yy = ly + j * (WIDE ? 50 : 54);
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(r.x + 50, yy - 9, 12, 0, 7); ctx.fill();
-      text(String(p.n).padStart(2, "0"), r.x + 76, yy, C.text); text(String(p.etiqueta || ""), r.x + 140, yy, C.text);
+      text(String(p.n).padStart(2, "0"), r.x + 76, yy, C.text); text(String(p.etiqueta || p.texto || p.titulo || p.nombre || ""), r.x + 140, yy, C.text);
       if (p.valor) text(String(p.valor), r.x + r.w - 30, yy, col, "right"); ctx.restore();
     });
   }
@@ -495,7 +498,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       ctx.save(); ctx.globalAlpha = a; rr(x, y, r.w - 60, h, 14); ctx.fillStyle = C.panel2; ctx.fill(); glow(i % 2 ? C.cyan : C.orange, ff.act); ctx.strokeStyle = i % 2 ? C.cyan : C.orange; ctx.lineWidth = 3 + 2 * ff.act; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = i % 2 ? C.cyan : C.orange; ctx.beginPath(); ctx.arc(x + 46, y + h / 2, 18, 0, 7); ctx.fill();
       font(26, 900, MONO); text(String(i + 1), x + 46, y + h / 2 + 9, C.ink, "center");
-      var f = fitFont(String(p), r.w - 160, h - 20, WIDE ? 44 : 46, 26, 800, 2); font(f.px, 800);
+      var f = fitFont(itT(p), r.w - 160, h - 20, WIDE ? 44 : 46, 26, 800, 2); font(f.px, 800);
       f.lines.forEach(function (ln, k) { text(ln, x + 90, y + h / 2 - (f.lines.length - 1) * f.px * .55 + k * f.px * 1.1 + f.px * .35, C.text); });
       ctx.restore();
     });
@@ -692,7 +695,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       stroke([[bx + bw, by + bh / 2], [inj.left[0], by + bh / 2]], P.red, 6, prog);
     }
     side.slice(0, 3).forEach(function (lb, i) {
-      var txt = typeof lb === "string" ? lb : lb.texto, col = pcol(lb.color, i ? P.cyan : P.green), bw = R.w * 0.36, bh = R.h * 0.11, by = injTop + injH * 0.25 + i * bh * 1.35, bx = R.x + 10;
+      var txt = itT(lb), col = pcol(lb.color, i ? P.cyan : P.green), bw = R.w * 0.36, bh = R.h * 0.11, by = injTop + injH * 0.25 + i * bh * 1.35, bx = R.x + 10;
       var ff = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local, true), a = ff.a; ctx.save(); glow(col, ff.act); pbox(bx, by, bw, bh, col, a); ctx.restore(); ctx.save(); ctx.globalAlpha *= a; plabel(txt, bx + bw / 2, by + bh / 2, P.white, Math.round(bh * 0.28)); ctx.restore();
       ctx.save(); ctx.globalAlpha *= a; stroke([[bx + bw, by + bh / 2], [inj.left[0], by + bh / 2]], col, 4, 1); ctx.restore();
     });
@@ -718,7 +721,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
       ctx.strokeStyle = "rgba(185,204,240,.6)"; ctx.lineWidth = 2; for (var k = 1; k <= 5; k++) { var yy = top + th * k / 6; ctx.beginPath(); ctx.moveTo(x + 8, yy); ctx.lineTo(x + tw * 0.32, yy); ctx.stroke(); }
       ctx.shadowBlur = 0; var lvl = ff.ghost ? 0 : clamp(num(it.nivel, 0.12), 0, 1) * easeOut((local - (ff.t0 == null ? 0.4 + i * 0.15 : ff.t0 + 0.1)) / 1.2), fh = (th - 12) * lvl;
       ctx.fillStyle = col; rr(x + 6, top + th - 6 - fh, tw - 12, Math.max(0, fh), 4); if (fh > 1) ctx.fill();
-      plabel(it.etiqueta || ("N.º " + (i + 1)), cx, top + th + 30, P.white, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800);
+      plabel(it.etiqueta || it.titulo || it.texto || it.nombre || ("N.º " + (i + 1)), cx, top + th + 30, P.white, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800);
       if (it.valor) plabel(it.valor, cx, top + th + 64, alert ? P.red : P.green, WIDE ? 22 : Math.min(26, Math.round(gap * 0.13)), "center", 800, true);
       if (alert && d.multiplicador) plabel(d.multiplicador, cx, top - 34, P.red, 44, "center", 800);
       ctx.restore();
@@ -730,7 +733,7 @@ window.__PREVIEW = /*__PREVIEW__*/false;
     var top = R.y + (d.encabezado ? 70 : 20), ch = Math.min(150, (R.h - (top - R.y) - 20) / Math.max(1, items.length) - 22), cw = R.w * 0.86, cx = R.x + (R.w - cw) / 2;
     items.forEach(function (it, i) {
       var p = focus(SC.indexOf(sc), (FT[SC.indexOf(sc)] || { i: [] }).i[i], local, true); if (p.a <= 0) return; var y = top + i * (ch + 22), col = cols[i % 4];
-      var tt = typeof it === "string" ? it : it.titulo, dt = typeof it === "string" ? "" : it.detalle;
+      var tt = itT(it), dt = itD(it);
       ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(0, (1 - Math.min(1, p.a / 0.42)) * 20); rr(cx, y, cw, ch, 16); ctx.fillStyle = P.fill; ctx.fill(); glow(col, p.act); ctx.lineWidth = 4 + 2 * p.act; ctx.strokeStyle = col; ctx.stroke(); ctx.shadowBlur = 0;
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx + ch * 0.45, y + ch / 2, ch * 0.24, 0, 7); ctx.fill(); plabel(String(i + 1), cx + ch * 0.45, y + ch / 2 + 2, P.white, Math.round(ch * 0.26), "center", 800);
       var tx = cx + ch * 0.9 + (cw - ch * 0.9) / 2; plabel(tt || "", tx, y + ch * (dt ? 0.38 : 0.5), P.white, pfit(String(tt || "").toUpperCase(), cw - ch * 1.1, WIDE ? 28 : 32, 16, 800), "center", 800);
